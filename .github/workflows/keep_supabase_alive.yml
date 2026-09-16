@@ -10,7 +10,7 @@ jobs:
   ping-supabase:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping Supabase REST API Endpoint
+      - name: Ping Supabase API Endpoint
         env:
           SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
@@ -20,18 +20,29 @@ jobs:
             exit 1
           fi
           
-          # Bersihkan trailing slash dari URL jika ada
           CLEAN_URL=$(echo "$SUPABASE_URL" | sed 's/\/*$//')
           
-          echo "Memanggil endpoint: $CLEAN_URL/rest/v1/"
-          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X GET "$CLEAN_URL/rest/v1/" \
+          echo "Memanggil endpoint Supabase Health & REST API..."
+          
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X GET "$CLEAN_URL/auth/v1/health" \
             -H "apikey: $SUPABASE_ANON_KEY" \
             -H "Authorization: Bearer $SUPABASE_ANON_KEY")
           
-          echo "Supabase HTTP Response Code: $RESPONSE"
-          if [ "$RESPONSE" -ge 200 ] && [ "$RESPONSE" -lt 400 ]; then
-            echo "Berhasil ping Supabase! Database tetap aktif."
+          echo "Supabase Auth Health HTTP Status: $RESPONSE"
+          
+          if [ "$RESPONSE" -eq 200 ]; then
+            echo "Berhasil ping Supabase Auth Health Check (HTTP 200)!"
           else
-            echo "Gagal memanggil Supabase REST API (HTTP Status Code: $RESPONSE)."
+            echo "Mencoba alternatif REST API table query..."
+            RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X GET "$CLEAN_URL/rest/v1/santri?select=id&limit=1" \
+              -H "apikey: $SUPABASE_ANON_KEY" \
+              -H "Authorization: Bearer $SUPABASE_ANON_KEY")
+            echo "Supabase REST API Table HTTP Status: $RESPONSE"
+          fi
+          
+          if [ "$RESPONSE" -ge 200 ] && [ "$RESPONSE" -lt 400 ]; then
+            echo "Ping Supabase Berhasil! Database dipastikan tetap AKTIF."
+          else
+            echo "Gagal memanggil Supabase API (HTTP Status Code: $RESPONSE)."
             exit 1
           fi
