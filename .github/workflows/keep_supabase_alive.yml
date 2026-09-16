@@ -11,20 +11,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Ping Supabase REST API Endpoint
+        env:
+          SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: |
-          if [ -z "${{ secrets.VITE_SUPABASE_URL }}" ] || [ -z "${{ secrets.VITE_SUPABASE_ANON_KEY }}" ]; then
-            echo "Error: Secrets VITE_SUPABASE_URL dan VITE_SUPABASE_ANON_KEY belum dikonfigurasi di Repository Settings -> Secrets."
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "Error: Secrets VITE_SUPABASE_URL atau VITE_SUPABASE_ANON_KEY belum terisi di Settings -> Secrets."
             exit 1
           fi
           
-          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X GET "${{ secrets.VITE_SUPABASE_URL }}/rest/v1/" \
-            -H "apikey: ${{ secrets.VITE_SUPABASE_ANON_KEY }}" \
-            -H "Authorization: Bearer ${{ secrets.VITE_SUPABASE_ANON_KEY }}")
+          # Bersihkan trailing slash dari URL jika ada
+          CLEAN_URL=$(echo "$SUPABASE_URL" | sed 's/\/*$//')
+          
+          echo "Memanggil endpoint: $CLEAN_URL/rest/v1/"
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X GET "$CLEAN_URL/rest/v1/" \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY")
           
           echo "Supabase HTTP Response Code: $RESPONSE"
           if [ "$RESPONSE" -ge 200 ] && [ "$RESPONSE" -lt 400 ]; then
             echo "Berhasil ping Supabase! Database tetap aktif."
           else
-            echo "Gagal memanggil Supabase REST API."
+            echo "Gagal memanggil Supabase REST API (HTTP Status Code: $RESPONSE)."
             exit 1
           fi
