@@ -68,7 +68,7 @@ export default function PinModal({
               <h2 className="text-base font-bold text-slate-800">
                 Verifikasi PIN Kelas
               </h2>
-              <p className="text-xs text-slate-400">Autentikasi Wali Kelas</p>
+              <p className="text-xs text-slate-400">Autentikasi Kode PIN Kelas</p>
             </div>
           </div>
           <button

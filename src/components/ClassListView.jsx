@@ -20,7 +20,8 @@ export default function ClassListView({
   isClassUnlocked
 }) {
   const isAdmin = currentUser?.role === 'admin';
-  const isUstadz = currentUser?.role === 'ustadz';
+  const isUstadz = currentUser?.role === 'ustadz' || currentUser?.role === 'ustadzah';
+  const isLoggedIn = isAdmin || isUstadz;
 
   return (
     <div className="space-y-6">
@@ -60,8 +61,7 @@ export default function ClassListView({
         ) : (
           classList.map((cls) => {
           const countSantri = santriList.filter(s => s.classId === cls.id).length;
-          const isMyClass = currentUser?.id === cls.ustadzId;
-          const isUnlocked = isAdmin || isClassUnlocked(cls.id);
+          const isUnlocked = isClassUnlocked(cls.id);
 
           return (
             <div
@@ -74,18 +74,18 @@ export default function ClassListView({
                     <BookOpen size={22} />
                   </div>
 
-                  {isAdmin ? (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-800 bg-amber-100 px-2.5 py-1 rounded-full border border-amber-200">
-                      <ShieldCheck size={13} />
-                      Akses Penuh Admin
-                    </span>
-                  ) : isUnlocked ? (
+                  {isUnlocked ? (
                     <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-full border border-emerald-200">
                       <Unlock size={13} />
-                      Terverifikasi
+                      Terverifikasi PIN
+                    </span>
+                  ) : !isLoggedIn ? (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">
+                      <Lock size={13} />
+                      Terkunci (Perlu Login)
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-800 bg-amber-100 px-2.5 py-1 rounded-full border border-amber-200">
                       <Lock size={13} />
                       Perlu PIN 4-Angka
                     </span>
@@ -141,14 +141,16 @@ export default function ClassListView({
                   className={`w-full py-2.5 px-4 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${
                     isUnlocked
                       ? 'bg-brand-dark hover:bg-brand-light text-white shadow-xs'
-                      : isUstadz && !isMyClass
-                      ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                      : 'bg-slate-100 hover:bg-slate-200/80 text-slate-800'
+                      : !isLoggedIn
+                      ? 'bg-slate-100 hover:bg-slate-200/80 text-slate-600'
+                      : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
                   }`}
                 >
                   <span>
                     {isUnlocked
                       ? 'Buka & Kelola Kelas'
+                      : !isLoggedIn
+                      ? 'Terkunci (Perlu Login)'
                       : 'Masukkan PIN Kelas'}
                   </span>
                   <ChevronRight size={15} />

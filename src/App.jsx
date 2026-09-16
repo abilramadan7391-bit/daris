@@ -67,34 +67,30 @@ export default function App() {
 
   // Role helpers
   const isAdmin = currentUser?.role === 'admin';
-  const isUstadz = currentUser?.role === 'ustadz';
+  const isUstadz = currentUser?.role === 'ustadz' || currentUser?.role === 'ustadzah';
+  const isLoggedIn = isAdmin || isUstadz;
 
   // Handling Class Enter / PIN verification
   const handleEnterClass = (cls) => {
-    if (isAdmin) {
-      // Admin has full super-access
+    if (!isLoggedIn) {
+      alert(`Akses Terbatas:\n\nPengunjung publik tidak memiliki wewenang mengakses detail kelas dan santri.\nSilakan login sebagai Ustadz/Ustadzah atau Admin dan masukkan 4-digit PIN kelas.`);
+      return;
+    }
+
+    // Baik Admin maupun Ustadz/Ustadzah membutuhkan PIN jika kelas belum di-unlock
+    if (dataService.isClassUnlocked(cls.id)) {
       setSelectedClass(cls);
+    } else {
+      setPinTargetClass(cls);
+    }
+  };
+
+  const handleSelectSantri = (santri) => {
+    if (!isLoggedIn) {
+      alert(`Akses Terbatas:\n\nDetail rapor santri hanya dapat diakses oleh Ustadz/Ustadzah dan Admin terdaftar.\nSilakan login terlebih dahulu.`);
       return;
     }
-
-    if (isUstadz) {
-      // Check if this class belongs to this ustadz
-      if (cls.ustadzId !== currentUser.id) {
-        alert(`Batas Akses Pengajar:\n\nKelas "${cls.name}" diasuh oleh ${cls.ustadzName}.\nSebagai ustadz, Anda hanya memiliki wewenang pada kelas asuhan Anda sendiri.`);
-        return;
-      }
-
-      // Check if unlocked
-      if (dataService.isClassUnlocked(cls.id)) {
-        setSelectedClass(cls);
-      } else {
-        setPinTargetClass(cls);
-      }
-      return;
-    }
-
-    // Public Guest: Read-only view
-    setSelectedClass(cls);
+    setSelectedSantri(santri);
   };
 
   const handlePinSuccess = (cls) => {
@@ -197,7 +193,7 @@ export default function App() {
           onToggleMobileSidebar={() => setMobileSidebarOpen(!mobileSidebarOpen)}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
-          onSelectSantriFromSearch={(santri) => setSelectedSantri(santri)}
+          onSelectSantriFromSearch={(santri) => handleSelectSantri(santri)}
           santriList={santriList}
           classList={classList}
         />
@@ -212,7 +208,7 @@ export default function App() {
               classList={classList}
               currentUser={currentUser}
               onOpenSetoranModal={() => handleOpenSetoran(null)}
-              onSelectSantri={(santri) => setSelectedSantri(santri)}
+              onSelectSantri={(santri) => handleSelectSantri(santri)}
               onSelectClass={(cls) => {
                 setActiveTab('classes');
                 handleEnterClass(cls);
@@ -231,7 +227,7 @@ export default function App() {
                 currentUser={currentUser}
                 onOpenSetoranForSantri={(s) => handleOpenSetoran(s)}
                 onOpenAddSantri={handleOpenAddSantri}
-                onSelectSantri={(s) => setSelectedSantri(s)}
+                onSelectSantri={(s) => handleSelectSantri(s)}
                 onEditSantri={handleEditSantri}
               />
             ) : (
@@ -253,7 +249,7 @@ export default function App() {
               classList={classList}
               setoranList={setoranList}
               currentUser={currentUser}
-              onSelectSantri={(santri) => setSelectedSantri(santri)}
+              onSelectSantri={(santri) => handleSelectSantri(santri)}
               onOpenSetoranForSantri={(santri) => handleOpenSetoran(santri)}
               onOpenAddSantri={() => handleOpenAddSantri()}
             />

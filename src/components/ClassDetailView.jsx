@@ -24,8 +24,8 @@ export default function ClassDetailView({
   onEditSantri
 }) {
   const isAdmin = currentUser?.role === 'admin';
-  const isUstadz = currentUser?.role === 'ustadz';
-  const canEdit = isAdmin || (isUstadz && currentUser?.id === targetClass.ustadzId);
+  const isUstadz = currentUser?.role === 'ustadz' || currentUser?.role === 'ustadzah';
+  const canEdit = isAdmin || isUstadz;
 
   // Filter santri in this class
   const classSantri = santriList.filter(s => s.classId === targetClass.id);
