@@ -1,0 +1,253 @@
+import React from 'react';
+import {
+  X,
+  Printer,
+  Award,
+  BookOpen,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  Phone,
+  User,
+  PenTool
+} from 'lucide-react';
+
+export default function SantriDetailModal({
+  santri,
+  onClose,
+  classList = [],
+  setoranList = [],
+  surahsList = [],
+  currentUser,
+  onOpenSetoranForSantri
+}) {
+  if (!santri) return null;
+
+  const isAdmin = currentUser?.role === 'admin';
+  const isUstadz = currentUser?.role === 'ustadz';
+  const canRecord = isAdmin || isUstadz;
+
+  const currentClass = classList.find(c => c.id === santri.classId);
+  const santriSetoran = setoranList.filter(s => s.santriId === santri.id);
+
+  const gradeACount = santriSetoran.filter(s => s.predikat === 'A').length;
+  const gradeBCount = santriSetoran.filter(s => s.predikat === 'B').length;
+  const gradeCCount = santriSetoran.filter(s => s.predikat === 'C').length;
+
+  // Set of surah names that have been deposited with grade A or B
+  const completedSurahs = new Set(
+    santriSetoran
+      .filter(s => s.predikat === 'A' || s.predikat === 'B')
+      .map(s => s.surahName)
+  );
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-900/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150">
+      <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl border border-slate-100 overflow-hidden my-auto animate-in zoom-in-95 duration-200">
+        {/* Header */}
+        <div className="p-5 sm:p-6 pb-4 flex items-center justify-between border-b border-slate-100 bg-slate-50/70">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">
+              <BookOpen size={20} />
+            </div>
+            <div>
+              <h2 className="text-base sm:text-lg font-bold text-slate-900">
+                Buku Rapor Tahfidz Digital
+              </h2>
+              <p className="text-xs text-slate-500">
+                Madrasah Darul Istiqomah • Progres Santri
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => window.print()}
+              className="p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors text-xs font-semibold flex items-center gap-1.5"
+              title="Cetak Rapor Digital"
+            >
+              <Printer size={16} />
+              <span className="hidden sm:inline">Cetak Rapor</span>
+            </button>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+            >
+              <X size={18} />
+            </button>
+          </div>
+        </div>
+
+        {/* Modal Body */}
+        <div className="p-5 sm:p-6 space-y-6 max-h-[80vh] overflow-y-auto">
+          {/* Profile Card */}
+          <div className="bg-gradient-to-r from-emerald-900 to-brand-dark text-white p-5 rounded-3xl shadow-md flex flex-col sm:flex-row items-center sm:items-start justify-between gap-4">
+            <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
+              <img
+                src={santri.avatar}
+                alt={santri.fullName}
+                className="w-16 h-16 rounded-2xl bg-white/10 border-2 border-white/20 object-cover"
+              />
+              <div>
+                <h3 className="text-lg font-extrabold tracking-tight">
+                  {santri.fullName}
+                </h3>
+                <p className="text-xs text-emerald-200 font-mono mt-0.5">
+                  NIS: {santri.nis} • {santri.gender === 'L' ? 'Laki-laki' : 'Perempuan'}
+                </p>
+                <div className="flex flex-wrap items-center gap-2 mt-2">
+                  <span className="bg-white/15 text-white text-[11px] px-2.5 py-0.5 rounded-full font-medium">
+                    {currentClass ? currentClass.name : 'Kelas Umum'}
+                  </span>
+                  <span className="text-[11px] text-emerald-200">
+                    Pengampu: {currentClass ? currentClass.ustadzName : '-'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {canRecord && (
+              <button
+                onClick={() => {
+                  onClose();
+                  onOpenSetoranForSantri(santri);
+                }}
+                className="bg-white hover:bg-emerald-50 text-brand-dark text-xs font-bold px-4 py-2.5 rounded-2xl flex items-center gap-2 shadow-xs transition-all active:scale-[0.98] shrink-0"
+              >
+                <PenTool size={15} className="text-emerald-700" />
+                <span>+ Catat Setoran</span>
+              </button>
+            )}
+          </div>
+
+          {/* Quick Metrics */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 text-center">
+              <p className="text-[10px] uppercase font-bold text-slate-400">Total Setoran</p>
+              <p className="text-xl font-extrabold text-slate-800 mt-0.5">
+                {santriSetoran.length}x
+              </p>
+            </div>
+            <div className="bg-emerald-50 p-3.5 rounded-2xl border border-emerald-100 text-center">
+              <p className="text-[10px] uppercase font-bold text-emerald-700">Mumtaz (A)</p>
+              <p className="text-xl font-extrabold text-emerald-800 mt-0.5">
+                {gradeACount}
+              </p>
+            </div>
+            <div className="bg-amber-50 p-3.5 rounded-2xl border border-amber-100 text-center">
+              <p className="text-[10px] uppercase font-bold text-amber-700">Jayyid (B)</p>
+              <p className="text-xl font-extrabold text-amber-800 mt-0.5">
+                {gradeBCount}
+              </p>
+            </div>
+            <div className="bg-red-50 p-3.5 rounded-2xl border border-red-100 text-center">
+              <p className="text-[10px] uppercase font-bold text-red-700">Perlu Ulang (C)</p>
+              <p className="text-xl font-extrabold text-red-800 mt-0.5">
+                {gradeCCount}
+              </p>
+            </div>
+          </div>
+
+          {/* 37 Surah Juz Amma Progress Visualizer */}
+          <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-sm font-bold text-slate-900">
+                  Capaian Surah Juz 30 (Juz Amma)
+                </h4>
+                <p className="text-xs text-slate-400">
+                  {completedSurahs.size} dari {surahsList.length} surah telah disetor
+                </p>
+              </div>
+              <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
+                {Math.round((completedSurahs.size / (surahsList.length || 1)) * 100)}%
+              </span>
+            </div>
+
+            {/* Surah Pills Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2 pt-1 max-h-48 overflow-y-auto pr-1">
+              {surahsList.map((surah) => {
+                const surahName = surah.nameLatin || surah.name_latin || `Surah ${surah.number}`;
+                const isDone = completedSurahs.has(surahName);
+                return (
+                  <div
+                    key={surah.id || surah.number}
+                    className={`p-2 rounded-xl text-[11px] font-bold flex items-center justify-between border transition-all ${
+                      isDone
+                        ? 'bg-emerald-700 text-white border-emerald-800 shadow-xs'
+                        : 'bg-slate-50 text-slate-500 border-slate-200'
+                    }`}
+                  >
+                    <span className="truncate">{surahName}</span>
+                    {isDone ? (
+                      <CheckCircle2 size={13} className="text-emerald-300 shrink-0" />
+                    ) : (
+                      <span className="text-[9px] text-slate-400 font-mono shrink-0">
+                        {surah.number}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Setoran History Table */}
+          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+              <h4 className="text-sm font-bold text-slate-900">
+                Riwayat Evaluasi Setoran
+              </h4>
+              <span className="text-xs text-slate-400">
+                {santriSetoran.length} Catatan
+              </span>
+            </div>
+
+            {santriSetoran.length === 0 ? (
+              <div className="p-8 text-center text-xs text-slate-400 italic">
+                Belum ada data setoran untuk santri ini.
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-100">
+                {santriSetoran.map((item) => (
+                  <div key={item.id} className="p-4 hover:bg-slate-50/80 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-slate-900 text-sm">
+                          {item.surahName}
+                        </span>
+                        <span className="text-slate-400">•</span>
+                        <span className="font-semibold text-slate-600">
+                          Ayat {item.ayatStart} - {item.ayatEnd}
+                        </span>
+                        <span
+                          className={`ml-1 text-[10px] font-black px-2 py-0.5 rounded-md border ${
+                            item.predikat === 'A'
+                              ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                              : item.predikat === 'B'
+                              ? 'bg-amber-100 text-amber-800 border-amber-200'
+                              : 'bg-red-100 text-red-800 border-red-200'
+                          }`}
+                        >
+                          Predikat {item.predikat}
+                        </span>
+                      </div>
+                      <p className="text-slate-600 text-[11px] italic">
+                        "{item.notes}"
+                      </p>
+                    </div>
+
+                    <div className="text-left sm:text-right text-[11px] text-slate-400 shrink-0">
+                      <p className="font-medium text-slate-600">{item.ustadzName}</p>
+                      <p>{item.date}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
