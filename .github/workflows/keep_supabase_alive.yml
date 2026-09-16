@@ -15,34 +15,30 @@ jobs:
           SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: |
+          echo "Checking Secret lengths..."
+          echo "URL length: ${#SUPABASE_URL}"
+          echo "KEY length: ${#SUPABASE_ANON_KEY}"
+          
           if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
-            echo "Error: Secrets VITE_SUPABASE_URL atau VITE_SUPABASE_ANON_KEY belum terisi di Settings -> Secrets."
+            echo "::error::Secrets VITE_SUPABASE_URL atau VITE_SUPABASE_ANON_KEY masih kosong! Pastikan ditambahkan di Repository Secrets."
             exit 1
           fi
           
-          CLEAN_URL=$(echo "$SUPABASE_URL" | sed 's/\/*$//')
+          CLEAN_URL=$(echo "$SUPABASE_URL" | sed -e 's/[[:space:]]*$//' -e 's/\/*$//')
+          echo "Target URL: $CLEAN_URL/auth/v1/health"
           
-          echo "Memanggil endpoint Supabase Health & REST API..."
-          
-          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X GET "$CLEAN_URL/auth/v1/health" \
+          HTTP_STATUS=$(curl -s -o response.txt -w "%{http_code}" -X GET "$CLEAN_URL/auth/v1/health" \
             -H "apikey: $SUPABASE_ANON_KEY" \
             -H "Authorization: Bearer $SUPABASE_ANON_KEY")
           
-          echo "Supabase Auth Health HTTP Status: $RESPONSE"
+          echo "HTTP Response Status Code: $HTTP_STATUS"
+          echo "Response Body:"
+          cat response.txt || true
+          echo ""
           
-          if [ "$RESPONSE" -eq 200 ]; then
-            echo "Berhasil ping Supabase Auth Health Check (HTTP 200)!"
+          if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 400 ]; then
+            echo "Ping Supabase BERHASIL! Database dipastikan tetap AKTIF."
           else
-            echo "Mencoba alternatif REST API table query..."
-            RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X GET "$CLEAN_URL/rest/v1/santri?select=id&limit=1" \
-              -H "apikey: $SUPABASE_ANON_KEY" \
-              -H "Authorization: Bearer $SUPABASE_ANON_KEY")
-            echo "Supabase REST API Table HTTP Status: $RESPONSE"
-          fi
-          
-          if [ "$RESPONSE" -ge 200 ] && [ "$RESPONSE" -lt 400 ]; then
-            echo "Ping Supabase Berhasil! Database dipastikan tetap AKTIF."
-          else
-            echo "Gagal memanggil Supabase API (HTTP Status Code: $RESPONSE)."
+            echo "::error::Gagal memanggil Supabase API (HTTP Code: $HTTP_STATUS)."
             exit 1
           fi
