@@ -47,7 +47,7 @@ export default function Sidebar({
     },
     {
       id: 'surahs',
-      label: 'Katalog Surah',
+      label: 'Daftar Surah',
       icon: BookOpen,
       badge: `${counts.surahs} Surah`
     }

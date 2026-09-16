@@ -259,7 +259,7 @@ export default function App() {
             />
           )}
 
-          {/* TAB 4: KATALOG SURAH */}
+          {/* TAB 4: DAFTAR SURAH */}
           {activeTab === 'surahs' && (
             <SurahsCatalogView
               surahsList={surahsList}

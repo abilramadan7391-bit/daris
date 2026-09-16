@@ -32,7 +32,7 @@ export default function SurahsCatalogView({
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight">
-              Katalog Surah
+              Daftar Surah
             </h1>
             <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full border border-emerald-200">
               {safeSurahs.length} Surah
