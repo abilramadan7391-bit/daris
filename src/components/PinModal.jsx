@@ -94,7 +94,7 @@ export default function PinModal({
           </div>
 
           {/* 4 Digit Boxes */}
-          <div className="flex justify-center gap-3">
+          <div className="flex justify-center items-center gap-2 sm:gap-3 py-1">
             {pin.map((digit, idx) => (
               <input
                 key={idx}
@@ -105,7 +105,7 @@ export default function PinModal({
                 value={digit}
                 onChange={(e) => handleChange(idx, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(idx, e)}
-                className="w-13 h-14 text-center text-2xl font-bold rounded-2xl border-2 border-slate-200 focus:border-brand-dark focus:ring-4 focus:ring-emerald-500/20 outline-hidden transition-all text-slate-800 bg-slate-50 focus:bg-white"
+                className="w-12 h-14 sm:w-14 sm:h-14 shrink-0 text-center text-2xl font-bold rounded-2xl border-2 border-slate-200 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-500/20 outline-none transition-all text-slate-800 bg-slate-50 focus:bg-white shadow-xs"
               />
             ))}
           </div>
