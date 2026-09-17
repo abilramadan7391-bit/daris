@@ -40,12 +40,6 @@ export default function Sidebar({
       badge: counts.classes
     },
     {
-      id: 'santri',
-      label: 'Data Santri',
-      icon: GraduationCap,
-      badge: counts.santri
-    },
-    {
       id: 'surahs',
       label: 'Daftar Surah',
       icon: BookOpen,
@@ -54,6 +48,12 @@ export default function Sidebar({
   ];
 
   const adminMenuItems = [
+    {
+      id: 'santri',
+      label: 'Data Santri',
+      icon: GraduationCap,
+      badge: counts.santri
+    },
     {
       id: 'ustadz',
       label: 'Kelola User',
