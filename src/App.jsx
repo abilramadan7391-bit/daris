@@ -7,6 +7,7 @@ import ClassDetailView from './components/ClassDetailView';
 import StudentListView from './components/StudentListView';
 import SurahsCatalogView from './components/SurahsCatalogView';
 import SetoranModal from './components/SetoranModal';
+import BulkSetoranModal from './components/BulkSetoranModal';
 import PinModal from './components/PinModal';
 import SantriDetailModal from './components/SantriDetailModal';
 import AdminManageClassModal from './components/AdminManageClassModal';
@@ -40,6 +41,8 @@ export default function App() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isSetoranModalOpen, setIsSetoranModalOpen] = useState(false);
   const [setoranPreselectedSantri, setSetoranPreselectedSantri] = useState(null);
+  const [isBulkSetoranModalOpen, setIsBulkSetoranModalOpen] = useState(false);
+  const [bulkSetoranPreselectedSantri, setBulkSetoranPreselectedSantri] = useState(null);
   const [editingSetoran, setEditingSetoran] = useState(null);
   const [pinTargetClass, setPinTargetClass] = useState(null);
   const [isAdminClassModalOpen, setIsAdminClassModalOpen] = useState(false);
@@ -113,6 +116,16 @@ export default function App() {
     } else {
       await dataService.addSetoran(record);
     }
+    await reloadData();
+  };
+
+  const handleOpenBulkSetoran = (santri = null) => {
+    setBulkSetoranPreselectedSantri(santri);
+    setIsBulkSetoranModalOpen(true);
+  };
+
+  const handleSaveBatchSetoran = async (records) => {
+    await dataService.addSetoranBatch(records);
     await reloadData();
   };
 
@@ -323,10 +336,24 @@ export default function App() {
           surahsList={surahsList}
           currentUser={currentUser}
           onOpenSetoranForSantri={(santri) => handleOpenSetoran(santri)}
+          onOpenBulkSetoranForSantri={(santri) => handleOpenBulkSetoran(santri)}
           onEditSetoran={(setoran) => handleOpenSetoran(null, setoran)}
           onDeleteSetoran={handleDeleteSetoran}
         />
       )}
+
+      {/* 3b. Modal Input Hafalan Massal / Matriks Checklist */}
+      <BulkSetoranModal
+        isOpen={isBulkSetoranModalOpen}
+        onClose={() => setIsBulkSetoranModalOpen(false)}
+        onSaveBatch={handleSaveBatchSetoran}
+        santriList={santriList}
+        classList={classList}
+        surahsList={surahsList}
+        setoranList={setoranList}
+        preselectedSantri={bulkSetoranPreselectedSantri}
+        currentUser={currentUser}
+      />
 
       {/* 4. Modal Buat Kelas Baru (Admin Utama) */}
       <AdminManageClassModal

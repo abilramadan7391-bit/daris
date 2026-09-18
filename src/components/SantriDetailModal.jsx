@@ -11,7 +11,8 @@ import {
   User,
   PenTool,
   Pencil,
-  Trash2
+  Trash2,
+  Layers
 } from 'lucide-react';
 
 export default function SantriDetailModal({
@@ -22,6 +23,7 @@ export default function SantriDetailModal({
   surahsList = [],
   currentUser,
   onOpenSetoranForSantri,
+  onOpenBulkSetoranForSantri,
   onEditSetoran,
   onDeleteSetoran
 }) {
@@ -111,16 +113,28 @@ export default function SantriDetailModal({
             </div>
 
             {canRecord && (
-              <button
-                onClick={() => {
-                  onClose();
-                  onOpenSetoranForSantri(santri);
-                }}
-                className="bg-white hover:bg-emerald-50 text-brand-dark text-xs font-bold px-4 py-2.5 rounded-2xl flex items-center gap-2 shadow-xs transition-all active:scale-[0.98] shrink-0"
-              >
-                <PenTool size={15} className="text-emerald-700" />
-                <span>+ Catat Setoran</span>
-              </button>
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <button
+                  onClick={() => {
+                    onClose();
+                    onOpenBulkSetoranForSantri?.(santri);
+                  }}
+                  className="bg-emerald-800/80 hover:bg-emerald-800 text-white text-xs font-bold px-3.5 py-2.5 rounded-2xl flex items-center gap-1.5 shadow-xs transition-all active:scale-[0.98] border border-white/20"
+                >
+                  <Layers size={15} className="text-emerald-300" />
+                  <span>+ Input Massal</span>
+                </button>
+                <button
+                  onClick={() => {
+                    onClose();
+                    onOpenSetoranForSantri(santri);
+                  }}
+                  className="bg-white hover:bg-emerald-50 text-brand-dark text-xs font-bold px-4 py-2.5 rounded-2xl flex items-center gap-1.5 shadow-xs transition-all active:scale-[0.98]"
+                >
+                  <PenTool size={15} className="text-emerald-700" />
+                  <span>+ Catat Setoran</span>
+                </button>
+              </div>
             )}
           </div>
 
@@ -154,7 +168,7 @@ export default function SantriDetailModal({
 
           {/* 37 Surah Juz Amma Progress Visualizer */}
           <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
                 <h4 className="text-sm font-bold text-slate-900">
                   Capaian Surah Juz 30 (Juz Amma)
@@ -163,9 +177,23 @@ export default function SantriDetailModal({
                   {completedSurahs.size} dari {surahsList.length} surah telah disetor
                 </p>
               </div>
-              <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
-                {Math.round((completedSurahs.size / (surahsList.length || 1)) * 100)}%
-              </span>
+              <div className="flex items-center gap-2">
+                {canRecord && (
+                  <button
+                    onClick={() => {
+                      onClose();
+                      onOpenBulkSetoranForSantri?.(santri);
+                    }}
+                    className="px-3 py-1 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-[11px] font-bold flex items-center gap-1 transition-all"
+                  >
+                    <Layers size={13} />
+                    <span>Input Massal</span>
+                  </button>
+                )}
+                <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
+                  {Math.round((completedSurahs.size / (surahsList.length || 1)) * 100)}%
+                </span>
+              </div>
             </div>
 
             {/* Surah Pills Grid */}

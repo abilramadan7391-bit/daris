@@ -422,6 +422,44 @@ export const dataService = {
     return created;
   },
 
+  async addSetoranBatch(records) {
+    if (!records || records.length === 0) return [];
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const payloads = records.map(record => {
+          const payload = {
+            surah_id: Number(record.surahId),
+            surah_name: record.surahName,
+            ayat_start: Number(record.ayatStart),
+            ayat_end: Number(record.ayatEnd),
+            predikat: record.predikat || 'A',
+            notes: record.notes || 'Input setoran awal/riwayat hafalan santri.',
+            ustadz_name: record.ustadzName || 'Ustadz Pengampu',
+            setoran_date: record.date || new Date().toISOString().split('T')[0]
+          };
+          if (isValidUUID(record.santriId)) payload.santri_id = record.santriId;
+          if (isValidUUID(record.classId)) payload.class_id = record.classId;
+          if (isValidUUID(record.ustadzId)) payload.ustadz_id = record.ustadzId;
+          return payload;
+        });
+
+        const { data, error } = await supabase.from('setoran').insert(payloads).select();
+        if (!error && data) return data.map(normalizeSetoran);
+      } catch (e) {
+        console.error('Supabase addSetoranBatch error:', e);
+      }
+    }
+    const current = getLocal(STORAGE_KEYS.SETORAN, INITIAL_SETORAN);
+    const createdList = records.map((record, idx) => normalizeSetoran({
+      id: `set-${Date.now()}-${idx}`,
+      date: record.date || new Date().toISOString().split('T')[0],
+      ...record
+    }));
+    const updated = [...createdList, ...current];
+    setLocal(STORAGE_KEYS.SETORAN, updated);
+    return createdList;
+  },
+
   async updateSetoran(setoranId, updates) {
     if (isSupabaseConfigured && supabase && (isValidUUID(setoranId) || typeof setoranId === 'string')) {
       try {
