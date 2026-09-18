@@ -18,6 +18,7 @@ export default function SetoranModal({
   classList = [],
   surahsList = [],
   preselectedSantri = null,
+  editingSetoran = null,
   currentUser
 }) {
   const [selectedSantriId, setSelectedSantriId] = useState('');
@@ -39,12 +40,24 @@ export default function SetoranModal({
     : santriList;
 
   useEffect(() => {
-    if (preselectedSantri) {
+    if (editingSetoran) {
+      setSelectedSantriId(editingSetoran.santriId);
+      setSurahQuery(editingSetoran.surahName);
+      setSelectedSurah({
+        id: editingSetoran.surahId,
+        nameLatin: editingSetoran.surahName,
+        totalAyat: 114
+      });
+      setAyatStart(editingSetoran.ayatStart || 1);
+      setAyatEnd(editingSetoran.ayatEnd || 1);
+      setPredikat(editingSetoran.predikat || 'A');
+      setNotes(editingSetoran.notes || '');
+    } else if (preselectedSantri) {
       setSelectedSantriId(preselectedSantri.id);
     } else if (availableSantriList.length > 0 && (!selectedSantriId || !availableSantriList.some(s => s.id === selectedSantriId))) {
       setSelectedSantriId(availableSantriList[0].id);
     }
-  }, [preselectedSantri, availableSantriList]);
+  }, [editingSetoran, preselectedSantri, availableSantriList]);
 
   // Filter surahs based on user typing
   const filteredSurahs = surahQuery.trim() === ''
@@ -98,11 +111,12 @@ export default function SetoranModal({
       ayatEnd: Number(ayatEnd),
       predikat,
       notes: notes.trim() || 'Alhamdulillah setoran lancar.',
-      ustadzId: currentUser?.id || 'usr-ustadz-1',
-      ustadzName: currentUser?.fullName || 'Ustadz Pengampu'
+      ustadzId: currentUser?.id || editingSetoran?.ustadzId || 'usr-ustadz-1',
+      ustadzName: currentUser?.fullName || editingSetoran?.ustadzName || 'Ustadz Pengampu',
+      date: editingSetoran?.date || new Date().toISOString().split('T')[0]
     };
 
-    onSave(record);
+    onSave(record, editingSetoran?.id);
 
     // Trigger celebratory confetti for Grade A
     if (predikat === 'A') {
@@ -138,7 +152,7 @@ export default function SetoranModal({
             </div>
             <div>
               <h2 className="text-base font-bold text-slate-900">
-                Catat Setoran Hafalan
+                {editingSetoran ? 'Edit Catatan Setoran' : 'Catat Setoran Hafalan'}
               </h2>
               <p className="text-xs text-slate-500">
                 Input evaluasi hafalan santri Darul Istiqomah

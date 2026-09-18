@@ -422,6 +422,47 @@ export const dataService = {
     return created;
   },
 
+  async updateSetoran(setoranId, updates) {
+    if (isSupabaseConfigured && supabase && (isValidUUID(setoranId) || typeof setoranId === 'string')) {
+      try {
+        const payload = {};
+        if (updates.surahId) payload.surah_id = Number(updates.surahId);
+        if (updates.surahName) payload.surah_name = updates.surahName;
+        if (updates.ayatStart !== undefined) payload.ayat_start = Number(updates.ayatStart);
+        if (updates.ayatEnd !== undefined) payload.ayat_end = Number(updates.ayatEnd);
+        if (updates.predikat) payload.predikat = updates.predikat;
+        if (updates.notes !== undefined) payload.notes = updates.notes;
+        if (updates.date) payload.setoran_date = updates.date;
+        if (isValidUUID(updates.santriId)) payload.santri_id = updates.santriId;
+        if (isValidUUID(updates.classId)) payload.class_id = updates.classId;
+
+        const { data, error } = await supabase.from('setoran').update(payload).eq('id', setoranId).select().single();
+        if (!error && data) return normalizeSetoran(data);
+      } catch (e) {
+        console.error('Supabase updateSetoran error:', e);
+      }
+    }
+    const current = getLocal(STORAGE_KEYS.SETORAN, INITIAL_SETORAN);
+    const updated = current.map(s => s.id === setoranId ? normalizeSetoran({ ...s, ...updates }) : s);
+    setLocal(STORAGE_KEYS.SETORAN, updated);
+    return updated.find(s => s.id === setoranId);
+  },
+
+  async deleteSetoran(setoranId) {
+    if (isSupabaseConfigured && supabase && (isValidUUID(setoranId) || typeof setoranId === 'string')) {
+      try {
+        const { error } = await supabase.from('setoran').delete().eq('id', setoranId);
+        if (!error) return true;
+      } catch (e) {
+        console.error('Supabase deleteSetoran error:', e);
+      }
+    }
+    const current = getLocal(STORAGE_KEYS.SETORAN, INITIAL_SETORAN);
+    const updated = current.filter(s => s.id !== setoranId);
+    setLocal(STORAGE_KEYS.SETORAN, updated);
+    return true;
+  },
+
   // --- PROFILES / USERS ---
   async getProfiles() {
     if (isSupabaseConfigured && supabase) {

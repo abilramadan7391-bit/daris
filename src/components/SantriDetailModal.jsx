@@ -9,7 +9,9 @@ import {
   Clock,
   Phone,
   User,
-  PenTool
+  PenTool,
+  Pencil,
+  Trash2
 } from 'lucide-react';
 
 export default function SantriDetailModal({
@@ -19,7 +21,9 @@ export default function SantriDetailModal({
   setoranList = [],
   surahsList = [],
   currentUser,
-  onOpenSetoranForSantri
+  onOpenSetoranForSantri,
+  onEditSetoran,
+  onDeleteSetoran
 }) {
   if (!santri) return null;
 
@@ -237,9 +241,30 @@ export default function SantriDetailModal({
                       </p>
                     </div>
 
-                    <div className="text-left sm:text-right text-[11px] text-slate-400 shrink-0">
-                      <p className="font-medium text-slate-600">{item.ustadzName}</p>
-                      <p>{item.date}</p>
+                    <div className="flex items-center gap-2 text-[11px] text-slate-400 shrink-0">
+                      <div className="text-left sm:text-right">
+                        <p className="font-medium text-slate-600">{item.ustadzName}</p>
+                        <p>{item.date}</p>
+                      </div>
+
+                      {canRecord && (
+                        <div className="flex items-center gap-1 border-l border-slate-200 pl-2 ml-1">
+                          <button
+                            onClick={() => onEditSetoran(item)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-amber-700 hover:bg-amber-50 transition-colors"
+                            title="Edit Catatan Setoran"
+                          >
+                            <Pencil size={14} />
+                          </button>
+                          <button
+                            onClick={() => onDeleteSetoran(item.id)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-red-700 hover:bg-red-50 transition-colors"
+                            title="Hapus Catatan Setoran"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}

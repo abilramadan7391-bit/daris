@@ -7,7 +7,9 @@ import {
   Clock,
   ChevronRight,
   TrendingUp,
-  BookOpen
+  BookOpen,
+  Pencil,
+  Trash2
 } from 'lucide-react';
 
 export default function DashboardOverview({
@@ -17,9 +19,11 @@ export default function DashboardOverview({
   currentUser,
   onOpenSetoranModal,
   onSelectSantri,
-  onSelectClass
+  onSelectClass,
+  onEditSetoran,
+  onDeleteSetoran
 }) {
-  const isUstadz = currentUser?.role === 'ustadz';
+  const isUstadz = currentUser?.role === 'ustadz' || currentUser?.role === 'ustadzah';
   const isAdmin = currentUser?.role === 'admin';
   const canRecord = isAdmin || isUstadz;
 
@@ -317,15 +321,36 @@ export default function DashboardOverview({
                     </div>
                   </div>
 
-                  <div className="text-right">
-                    <span
-                      className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${predikatColor}`}
-                    >
-                      {predikatLabel}
-                    </span>
-                    <p className="text-[10px] text-slate-400 mt-1">
-                      {item.date}
-                    </p>
+                  <div className="flex items-center gap-2 text-right">
+                    <div>
+                      <span
+                        className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${predikatColor}`}
+                      >
+                        {predikatLabel}
+                      </span>
+                      <p className="text-[10px] text-slate-400 mt-1">
+                        {item.date}
+                      </p>
+                    </div>
+
+                    {canRecord && (
+                      <div className="flex items-center gap-1 border-l border-slate-200 pl-2 ml-1" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => onEditSetoran(item)}
+                          className="p-1 rounded-lg text-slate-400 hover:text-amber-700 hover:bg-amber-50 transition-colors"
+                          title="Edit Setoran"
+                        >
+                          <Pencil size={13} />
+                        </button>
+                        <button
+                          onClick={() => onDeleteSetoran(item.id)}
+                          className="p-1 rounded-lg text-slate-400 hover:text-red-700 hover:bg-red-50 transition-colors"
+                          title="Hapus Setoran"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               );

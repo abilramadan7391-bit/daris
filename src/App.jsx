@@ -40,6 +40,7 @@ export default function App() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isSetoranModalOpen, setIsSetoranModalOpen] = useState(false);
   const [setoranPreselectedSantri, setSetoranPreselectedSantri] = useState(null);
+  const [editingSetoran, setEditingSetoran] = useState(null);
   const [pinTargetClass, setPinTargetClass] = useState(null);
   const [isAdminClassModalOpen, setIsAdminClassModalOpen] = useState(false);
   const [isAdminSurahModalOpen, setIsAdminSurahModalOpen] = useState(false);
@@ -100,14 +101,26 @@ export default function App() {
   };
 
   // Setoran Modal Launchers
-  const handleOpenSetoran = (santri = null) => {
+  const handleOpenSetoran = (santri = null, setoran = null) => {
+    setEditingSetoran(setoran);
     setSetoranPreselectedSantri(santri);
     setIsSetoranModalOpen(true);
   };
 
-  const handleSaveSetoran = async (record) => {
-    await dataService.addSetoran(record);
+  const handleSaveSetoran = async (record, existingId = null) => {
+    if (existingId) {
+      await dataService.updateSetoran(existingId, record);
+    } else {
+      await dataService.addSetoran(record);
+    }
     await reloadData();
+  };
+
+  const handleDeleteSetoran = async (setoranId) => {
+    if (window.confirm('Apakah Anda yakin ingin menghapus catatan setoran ini?')) {
+      await dataService.deleteSetoran(setoranId);
+      await reloadData();
+    }
   };
 
   // Add / Edit Santri Launchers
@@ -213,6 +226,8 @@ export default function App() {
                 setActiveTab('classes');
                 handleEnterClass(cls);
               }}
+              onEditSetoran={(setoran) => handleOpenSetoran(null, setoran)}
+              onDeleteSetoran={handleDeleteSetoran}
             />
           )}
 
@@ -285,6 +300,7 @@ export default function App() {
         classList={classList}
         surahsList={surahsList}
         preselectedSantri={setoranPreselectedSantri}
+        editingSetoran={editingSetoran}
         currentUser={currentUser}
       />
 
@@ -307,6 +323,8 @@ export default function App() {
           surahsList={surahsList}
           currentUser={currentUser}
           onOpenSetoranForSantri={(santri) => handleOpenSetoran(santri)}
+          onEditSetoran={(setoran) => handleOpenSetoran(null, setoran)}
+          onDeleteSetoran={handleDeleteSetoran}
         />
       )}
 
