@@ -29,8 +29,13 @@ export default function DashboardOverview({
 
   // Compute metrics
   const totalSantri = santriList.length;
-  const today = new Date().toISOString().split('T')[0];
-  const setoranToday = setoranList.filter(s => s.date === today);
+  const now = new Date();
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const setoranThisWeek = setoranList.filter(s => {
+    if (!s.date) return false;
+    const itemDate = new Date(s.date);
+    return itemDate >= sevenDaysAgo;
+  });
 
   const gradeACount = setoranList.filter(s => s.predikat === 'A').length;
   const gradeBCount = setoranList.filter(s => s.predikat === 'B').length;
@@ -80,11 +85,11 @@ export default function DashboardOverview({
           </div>
         </div>
 
-        {/* Card 2: Setoran Hari Ini */}
+        {/* Card 2: Setoran Minggu Ini */}
         <div className="bg-white text-slate-800 p-5 rounded-3xl border border-slate-200/70 shadow-card flex flex-col justify-between min-h-[145px]">
           <div className="flex items-start justify-between">
             <span className="text-xs font-semibold text-slate-500">
-              Setoran Hari Ini
+              Setoran Minggu Ini
             </span>
             <div className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200/70 flex items-center justify-center text-slate-600 transition-colors cursor-pointer">
               <ArrowUpRight size={16} />
@@ -92,7 +97,7 @@ export default function DashboardOverview({
           </div>
           <div>
             <div className="text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight">
-              {setoranToday.length}
+              {setoranThisWeek.length}
             </div>
             <div className="flex items-center gap-1 text-[11px] text-emerald-600 mt-1.5 font-semibold">
               <TrendingUp size={13} />
