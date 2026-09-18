@@ -203,9 +203,26 @@ export const dataService = {
   async getClasses() {
     if (isSupabaseConfigured && supabase) {
       try {
-        const { data, error } = await supabase.from('classes').select('*').order('name');
-        if (!error && Array.isArray(data)) {
-          return data.map(normalizeClass);
+        const [classesRes, profilesRes] = await Promise.all([
+          supabase.from('classes').select('*').order('name'),
+          supabase.from('profiles').select('id, full_name')
+        ]);
+
+        if (!classesRes.error && Array.isArray(classesRes.data)) {
+          const profileMap = {};
+          if (!profilesRes.error && Array.isArray(profilesRes.data)) {
+            profilesRes.data.forEach(p => {
+              if (p.id) profileMap[p.id] = p.full_name;
+            });
+          }
+
+          return classesRes.data.map(cls => {
+            const resolvedUstadzName = profileMap[cls.ustadz_id] || cls.ustadz_name || cls.ustadzName || 'Ustadz Pengampu';
+            return normalizeClass({
+              ...cls,
+              ustadzName: resolvedUstadzName
+            });
+          });
         }
       } catch (e) {
         console.error('Supabase getClasses error, falling back:', e);
@@ -230,7 +247,12 @@ export const dataService = {
         }
         const { data, error } = await supabase.from('classes').insert([payload]).select().single();
         if (!error && data) {
-          return normalizeClass({ ...data, ustadzName: newClass.ustadzName });
+          let ustadzName = newClass.ustadzName;
+          if (!ustadzName && data.ustadz_id) {
+            const { data: prof } = await supabase.from('profiles').select('full_name').eq('id', data.ustadz_id).maybeSingle();
+            if (prof) ustadzName = prof.full_name;
+          }
+          return normalizeClass({ ...data, ustadzName: ustadzName || 'Ustadz Pengampu' });
         }
       } catch (e) {
         console.error('Supabase addClass error:', e);
@@ -255,8 +277,17 @@ export const dataService = {
         if (updates.pinCode) payload.pin_code = updates.pinCode;
         if (updates.room) payload.room = updates.room;
         if (updates.schedule) payload.schedule = updates.schedule;
+        if (updates.ustadzId !== undefined) payload.ustadz_id = updates.ustadzId || null;
+
         const { data, error } = await supabase.from('classes').update(payload).eq('id', classId).select().single();
-        if (!error && data) return normalizeClass(data);
+        if (!error && data) {
+          let ustadzName = updates.ustadzName;
+          if (!ustadzName && data.ustadz_id) {
+            const { data: prof } = await supabase.from('profiles').select('full_name').eq('id', data.ustadz_id).maybeSingle();
+            if (prof) ustadzName = prof.full_name;
+          }
+          return normalizeClass({ ...data, ustadzName: ustadzName || 'Ustadz Pengampu' });
+        }
       } catch (e) {
         console.error('Supabase updateClass error:', e);
       }
