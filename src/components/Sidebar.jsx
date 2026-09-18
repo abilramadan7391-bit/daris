@@ -80,8 +80,8 @@ export default function Sidebar({
         {/* Brand Header */}
         <div className="p-6 pb-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-brand-dark flex items-center justify-center text-white shadow-md shadow-brand-dark/20">
-              <span className="text-xl font-bold">DI</span>
+            <div className="w-11 h-11 rounded-2xl bg-brand-dark flex items-center justify-center text-white shadow-md shadow-brand-dark/20 overflow-hidden shrink-0 border border-emerald-800/20">
+              <img src="/logo.jpg" alt="Logo Darul Istiqomah" className="w-full h-full object-cover" />
             </div>
             <div>
               <h1 className="font-bold text-slate-900 leading-tight tracking-tight text-lg">
