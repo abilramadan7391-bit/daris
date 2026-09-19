@@ -84,7 +84,8 @@ export const normalizeSetoran = (item) => {
     notes: item.notes || '',
     ustadzId: item.ustadzId || item.ustadz_id || '',
     ustadzName: item.ustadzName || item.ustadz_name || 'Ustadz Penguji',
-    date: item.date || item.setoran_date || new Date().toISOString().split('T')[0]
+    date: item.date || item.setoran_date || new Date().toISOString().split('T')[0],
+    isBulk: item.isBulk ?? item.is_bulk ?? (Boolean(item.notes && item.notes.includes('Input setoran awal')))
   };
 };
 
@@ -435,7 +436,8 @@ export const dataService = {
             predikat: record.predikat || 'A',
             notes: record.notes || 'Input setoran awal/riwayat hafalan santri.',
             ustadz_name: record.ustadzName || 'Ustadz Pengampu',
-            setoran_date: record.date || new Date().toISOString().split('T')[0]
+            setoran_date: record.date || new Date().toISOString().split('T')[0],
+            is_bulk: true
           };
           if (isValidUUID(record.santriId)) payload.santri_id = record.santriId;
           if (isValidUUID(record.classId)) payload.class_id = record.classId;
@@ -453,6 +455,7 @@ export const dataService = {
     const createdList = records.map((record, idx) => normalizeSetoran({
       id: `set-${Date.now()}-${idx}`,
       date: record.date || new Date().toISOString().split('T')[0],
+      isBulk: true,
       ...record
     }));
     const updated = [...createdList, ...current];

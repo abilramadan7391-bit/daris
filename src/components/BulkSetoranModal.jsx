@@ -153,7 +153,8 @@ export default function BulkSetoranModal({
           notes: notes.trim() || 'Input setoran awal/riwayat hafalan santri.',
           ustadzId: currentUser?.id || 'usr-ustadz-1',
           ustadzName: currentUser?.fullName || 'Ustadz Pengampu',
-          date
+          date,
+          isBulk: true
         };
       });
 

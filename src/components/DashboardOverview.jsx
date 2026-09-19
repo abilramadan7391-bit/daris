@@ -27,20 +27,26 @@ export default function DashboardOverview({
   const isAdmin = currentUser?.role === 'admin';
   const canRecord = isAdmin || isUstadz;
 
+  // Filter out bulk / input massal setoran records from Dashboard statistics & feed
+  const regularSetoranList = setoranList.filter(s => {
+    const isBulk = s.isBulk || s.is_bulk || (s.notes && s.notes.includes('Input setoran awal'));
+    return !isBulk;
+  });
+
   // Compute metrics
   const totalSantri = santriList.length;
   const now = new Date();
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const setoranThisWeek = setoranList.filter(s => {
+  const setoranThisWeek = regularSetoranList.filter(s => {
     if (!s.date) return false;
     const itemDate = new Date(s.date);
     return itemDate >= sevenDaysAgo;
   });
 
-  const gradeACount = setoranList.filter(s => s.predikat === 'A').length;
-  const gradeBCount = setoranList.filter(s => s.predikat === 'B').length;
-  const gradeCCount = setoranList.filter(s => s.predikat === 'C').length;
-  const totalSetoran = setoranList.length || 1;
+  const gradeACount = regularSetoranList.filter(s => s.predikat === 'A').length;
+  const gradeBCount = regularSetoranList.filter(s => s.predikat === 'B').length;
+  const gradeCCount = regularSetoranList.filter(s => s.predikat === 'C').length;
+  const totalSetoran = regularSetoranList.length || 1;
 
   const mutqinPercentage = Math.round((gradeACount / totalSetoran) * 100);
 
@@ -101,7 +107,7 @@ export default function DashboardOverview({
             </div>
             <div className="flex items-center gap-1 text-[11px] text-emerald-600 mt-1.5 font-semibold">
               <TrendingUp size={13} />
-              <span>{setoranList.length} total riwayat setoran</span>
+              <span>{regularSetoranList.length} setoran harian</span>
             </div>
           </div>
         </div>
@@ -285,7 +291,12 @@ export default function DashboardOverview({
           </div>
 
           <div className="space-y-3.5">
-            {setoranList.slice(0, 4).map((item) => {
+            {regularSetoranList.length === 0 ? (
+              <div className="p-6 text-center text-xs text-slate-400 italic bg-slate-50 rounded-2xl border border-slate-100">
+                Belum ada aktivitas setoran harian.
+              </div>
+            ) : (
+              regularSetoranList.slice(0, 4).map((item) => {
               const predikatColor =
                 item.predikat === 'A'
                   ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
@@ -359,7 +370,8 @@ export default function DashboardOverview({
                   </div>
                 </div>
               );
-            })}
+            })
+            )}
           </div>
         </div>
 
