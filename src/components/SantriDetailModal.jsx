@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import {
   X,
   Printer,
@@ -12,8 +12,11 @@ import {
   PenTool,
   Pencil,
   Trash2,
-  Layers
+  Layers,
+  Camera,
+  Loader2
 } from 'lucide-react';
+import { compressImage } from '../utils/imageCompressor';
 
 export default function SantriDetailModal({
   santri,
@@ -25,13 +28,53 @@ export default function SantriDetailModal({
   onOpenSetoranForSantri,
   onOpenBulkSetoranForSantri,
   onEditSetoran,
-  onDeleteSetoran
+  onDeleteSetoran,
+  onUpdateSantri
 }) {
+  const fileInputRef = useRef(null);
+  const [isCompressing, setIsCompressing] = useState(false);
+  const [pendingPhoto, setPendingPhoto] = useState(null);
+  const [isSavingPhoto, setIsSavingPhoto] = useState(false);
+  const [photoSavedNotice, setPhotoSavedNotice] = useState(false);
+
   if (!santri) return null;
 
   const isAdmin = currentUser?.role === 'admin';
   const isUstadz = currentUser?.role === 'ustadz';
   const canRecord = isAdmin || isUstadz;
+
+  const handlePhotoSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsCompressing(true);
+      const compressedDataUrl = await compressImage(file, 300, 0.7);
+      setPendingPhoto(compressedDataUrl);
+    } catch (err) {
+      console.error('Error compressing image:', err);
+      alert('Gagal memproses foto profil. Silakan coba file gambar lain.');
+    } finally {
+      setIsCompressing(false);
+      if (e.target) e.target.value = '';
+    }
+  };
+
+  const handleSavePhoto = async () => {
+    if (!pendingPhoto || !onUpdateSantri) return;
+    try {
+      setIsSavingPhoto(true);
+      await onUpdateSantri(santri.id, { avatar: pendingPhoto });
+      setPendingPhoto(null);
+      setPhotoSavedNotice(true);
+      setTimeout(() => setPhotoSavedNotice(false), 3000);
+    } catch (err) {
+      console.error('Error saving photo:', err);
+      alert('Gagal menyimpan foto profil.');
+    } finally {
+      setIsSavingPhoto(false);
+    }
+  };
 
   const currentClass = classList.find(c => c.id === santri.classId);
   const santriSetoran = setoranList.filter(s => s.santriId === santri.id);
@@ -89,11 +132,74 @@ export default function SantriDetailModal({
           {/* Profile Card */}
           <div className="bg-gradient-to-r from-emerald-900 to-brand-dark text-white p-5 rounded-3xl shadow-md flex flex-col sm:flex-row items-center sm:items-start justify-between gap-4">
             <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
-              <img
-                src={santri.avatar}
-                alt={santri.fullName}
-                className="w-16 h-16 rounded-2xl bg-white/10 border-2 border-white/20 object-cover"
-              />
+              <div className="flex flex-col items-center gap-1.5">
+                <div className="relative group shrink-0">
+                  <img
+                    src={pendingPhoto || santri.avatar}
+                    alt={santri.fullName}
+                    className={`w-16 h-16 rounded-2xl bg-white/10 border-2 object-cover shadow-xs ${
+                      pendingPhoto ? 'border-amber-400 ring-4 ring-amber-400/30' : 'border-white/20'
+                    }`}
+                  />
+                  {canRecord && (
+                    <>
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        accept="image/*"
+                        onChange={handlePhotoSelect}
+                        className="hidden"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isCompressing || isSavingPhoto}
+                        className="absolute -bottom-1 -right-1 bg-emerald-500 hover:bg-emerald-400 text-white p-1.5 rounded-xl shadow-md border border-white/40 transition-all hover:scale-105"
+                        title="Pilih Foto Profil Baru"
+                      >
+                        {isCompressing ? (
+                          <Loader2 size={12} className="animate-spin" />
+                        ) : (
+                          <Camera size={12} />
+                        )}
+                      </button>
+                    </>
+                  )}
+                </div>
+
+                {/* Explicit Simpan Foto Button when a new photo is selected */}
+                {pendingPhoto && (
+                  <div className="flex items-center gap-1 mt-1">
+                    <button
+                      type="button"
+                      onClick={handleSavePhoto}
+                      disabled={isSavingPhoto}
+                      className="px-2.5 py-1 bg-emerald-500 hover:bg-emerald-400 text-white text-[11px] font-bold rounded-lg shadow-sm flex items-center gap-1 transition-all"
+                    >
+                      {isSavingPhoto ? (
+                        <Loader2 size={12} className="animate-spin" />
+                      ) : (
+                        <CheckCircle2 size={12} />
+                      )}
+                      <span>Simpan Foto</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPendingPhoto(null)}
+                      className="px-2 py-1 bg-white/20 hover:bg-white/30 text-white text-[11px] font-semibold rounded-lg transition-all"
+                    >
+                      Batal
+                    </button>
+                  </div>
+                )}
+
+                {photoSavedNotice && (
+                  <span className="text-[10px] font-bold text-emerald-300 bg-emerald-950/80 px-2 py-0.5 rounded-md border border-emerald-400/40 animate-in fade-in">
+                    ✓ Foto tersimpan!
+                  </span>
+                )}
+              </div>
+
               <div>
                 <h3 className="text-lg font-extrabold tracking-tight">
                   {santri.fullName}

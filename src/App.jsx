@@ -158,6 +158,14 @@ export default function App() {
     await reloadData();
   };
 
+  const handleUpdateSantri = async (santriId, updates) => {
+    await dataService.updateSantri(santriId, updates);
+    await reloadData();
+    if (selectedSantri && selectedSantri.id === santriId) {
+      setSelectedSantri(prev => prev ? { ...prev, ...updates } : null);
+    }
+  };
+
   // Admin Class creation
   const handleSaveClass = async (newClass) => {
     await dataService.addClass(newClass);
@@ -340,6 +348,7 @@ export default function App() {
           onOpenBulkSetoranForSantri={(santri) => handleOpenBulkSetoran(santri)}
           onEditSetoran={(setoran) => handleOpenSetoran(null, setoran)}
           onDeleteSetoran={handleDeleteSetoran}
+          onUpdateSantri={handleUpdateSantri}
         />
       )}
 

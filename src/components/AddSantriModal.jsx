@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { X, GraduationCap, CheckCircle2, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, GraduationCap, CheckCircle2, AlertCircle, Camera, Loader2 } from 'lucide-react';
+import { compressImage } from '../utils/imageCompressor';
 
 export default function AddSantriModal({
   isOpen,
@@ -17,7 +18,10 @@ export default function AddSantriModal({
   const [parentName, setParentName] = useState('');
   const [parentPhone, setParentPhone] = useState('');
   const [targetJuz, setTargetJuz] = useState(30);
+  const [avatar, setAvatar] = useState('');
+  const [isCompressing, setIsCompressing] = useState(false);
   const [error, setError] = useState('');
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (editingSantri) {
@@ -29,6 +33,7 @@ export default function AddSantriModal({
       setParentName(editingSantri.parentName || '');
       setParentPhone(editingSantri.parentPhone || '');
       setTargetJuz(editingSantri.targetJuz || 30);
+      setAvatar(editingSantri.avatar || '');
     } else {
       setNis(`DI-${new Date().getFullYear()}-${String(Math.floor(100 + Math.random() * 900))}`);
       setFullName('');
@@ -38,8 +43,27 @@ export default function AddSantriModal({
       setParentName('');
       setParentPhone('');
       setTargetJuz(30);
+      setAvatar('');
     }
+    setError('');
   }, [editingSantri, defaultClassId, classList, isOpen]);
+
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsCompressing(true);
+      const compressedDataUrl = await compressImage(file, 300, 0.7);
+      setAvatar(compressedDataUrl);
+    } catch (err) {
+      console.error('Error compressing image:', err);
+      setError('Gagal mengkompresi gambar. Silakan coba file gambar lain.');
+    } finally {
+      setIsCompressing(false);
+      if (e.target) e.target.value = '';
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -60,7 +84,8 @@ export default function AddSantriModal({
       classId,
       parentName: parentName.trim(),
       parentPhone: parentPhone.trim(),
-      targetJuz: Number(targetJuz) || 30
+      targetJuz: Number(targetJuz) || 30,
+      avatar: avatar || undefined
     };
 
     onSave(santriData, editingSantri?.id);
@@ -103,6 +128,57 @@ export default function AddSantriModal({
               <span>{error}</span>
             </div>
           )}
+
+          {/* Foto Profil Upload Picker */}
+          <div className="flex items-center gap-4 p-3 bg-slate-50/80 rounded-2xl border border-slate-200/60">
+            <div className="relative shrink-0">
+              <img
+                src={avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(fullName || 'Santri')}`}
+                alt="Pratinjau Foto"
+                className="w-14 h-14 rounded-2xl bg-white border border-slate-200 object-cover shadow-xs"
+              />
+              {isCompressing && (
+                <div className="absolute inset-0 bg-slate-900/40 rounded-2xl flex items-center justify-center text-white">
+                  <Loader2 size={16} className="animate-spin" />
+                </div>
+              )}
+            </div>
+            <div className="space-y-1">
+              <label className="block text-xs font-bold text-slate-700">
+                Foto Profil Santri
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept="image/*"
+                  onChange={handlePhotoUpload}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isCompressing}
+                  className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
+                >
+                  <Camera size={14} />
+                  <span>{avatar ? 'Ganti Foto' : 'Unggah Foto'}</span>
+                </button>
+                {avatar && (
+                  <button
+                    type="button"
+                    onClick={() => setAvatar('')}
+                    className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-medium transition-all"
+                  >
+                    Hapus
+                  </button>
+                )}
+              </div>
+              <p className="text-[10px] text-slate-400">
+                Otomatis dikompresi agar ukuran file kecil & hemat database.
+              </p>
+            </div>
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>

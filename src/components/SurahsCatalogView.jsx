@@ -38,9 +38,6 @@ export default function SurahsCatalogView({
               {safeSurahs.length} Surah
             </span>
           </div>
-          <p className="text-sm text-slate-500 mt-1">
-            Daftar surah Al-Qur'an (Default: 37 Surah Juz Amma / Juz 30). Admin Utama dapat menambahkan surah dari juz lainnya.
-          </p>
         </div>
 
         {isAdmin && (

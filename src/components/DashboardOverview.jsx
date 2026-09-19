@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   ArrowUpRight,
   Calendar,
@@ -9,7 +9,9 @@ import {
   TrendingUp,
   BookOpen,
   Pencil,
-  Trash2
+  Trash2,
+  X,
+  Trophy
 } from 'lucide-react';
 import { DEFAULT_JUZ_AMMA_SURAHS } from '../data/initialData';
 
@@ -25,6 +27,38 @@ export default function DashboardOverview({
   onEditSetoran,
   onDeleteSetoran
 }) {
+  const [selectedCategoryModal, setSelectedCategoryModal] = useState(null);
+  const [selectedRankSantriModal, setSelectedRankSantriModal] = useState(null);
+
+  // Compute ranking of top 7 santri based on memorized surah count in Rapor
+  const santriRankList = React.useMemo(() => {
+    const list = santriList.map(santri => {
+      const passedSetoran = setoranList.filter(
+        s => String(s.santriId) === String(santri.id) && (s.predikat === 'A' || s.predikat === 'B')
+      );
+      const uniqueSurahKeys = new Set(passedSetoran.map(s => String(s.surahId || s.surahName || '')));
+      return {
+        santri,
+        surahCount: uniqueSurahKeys.size,
+        passedCount: passedSetoran.length
+      };
+    });
+
+    list.sort((a, b) => b.surahCount - a.surahCount || b.passedCount - a.passedCount);
+
+    return list.slice(0, 7).map((item, idx) => ({
+      ...item,
+      rank: idx + 1
+    }));
+  }, [santriList, setoranList]);
+
+  // Order from right to left (Rank 1 at far right, Rank 7 at far left)
+  const displayBars = React.useMemo(() => {
+    return [...santriRankList].reverse();
+  }, [santriRankList]);
+
+  const maxSurahCount = Math.max(...santriRankList.map(s => s.surahCount), 1);
+
   const isUstadz = currentUser?.role === 'ustadz' || currentUser?.role === 'ustadzah';
   const isAdmin = currentUser?.role === 'admin';
   const canRecord = isAdmin || isUstadz;
@@ -164,9 +198,6 @@ export default function DashboardOverview({
         <h1 className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight">
           Dashboard
         </h1>
-        <p className="text-sm text-slate-500 mt-1">
-          Pantau perkembangan dan kelancaran hafalan Qur'an santri Madrasah Darul Istiqomah.
-        </p>
       </div>
 
       {/* Top 4 Stat Cards */}
@@ -177,7 +208,11 @@ export default function DashboardOverview({
             <span className="text-xs font-semibold text-emerald-300">
               Total Santri Aktif
             </span>
-            <div className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors cursor-pointer">
+            <div
+              onClick={() => setSelectedCategoryModal({ title: 'Total Santri Aktif', list: santriList })}
+              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 flex items-center justify-center text-white transition-all cursor-pointer"
+              title="Lihat Santri Total Santri Aktif"
+            >
               <ArrowUpRight size={16} />
             </div>
           </div>
@@ -199,7 +234,11 @@ export default function DashboardOverview({
             <span className="text-xs font-bold text-slate-700">
               An-Naas - Adh-Dhuha
             </span>
-            <div className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200/70 flex items-center justify-center text-slate-600 transition-colors cursor-pointer">
+            <div
+              onClick={() => setSelectedCategoryModal({ title: 'An-Naas - Adh-Dhuha', list: santriAdhDhuha })}
+              className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200/70 active:scale-95 flex items-center justify-center text-slate-600 transition-all cursor-pointer"
+              title="Lihat Santri An-Naas - Adh-Dhuha"
+            >
               <ArrowUpRight size={16} />
             </div>
           </div>
@@ -217,7 +256,11 @@ export default function DashboardOverview({
             <span className="text-xs font-bold text-slate-700">
               An-Naas - An-Naba'
             </span>
-            <div className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200/70 flex items-center justify-center text-slate-600 transition-colors cursor-pointer">
+            <div
+              onClick={() => setSelectedCategoryModal({ title: "An-Naas - An-Naba'", list: santriAnNaba })}
+              className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200/70 active:scale-95 flex items-center justify-center text-slate-600 transition-all cursor-pointer"
+              title="Lihat Santri An-Naas - An-Naba'"
+            >
               <ArrowUpRight size={16} />
             </div>
           </div>
@@ -235,7 +278,11 @@ export default function DashboardOverview({
             <span className="text-xs font-bold text-slate-700">
               Perlu Muraja'ah
             </span>
-            <div className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200/70 flex items-center justify-center text-slate-600 transition-colors cursor-pointer">
+            <div
+              onClick={() => setSelectedCategoryModal({ title: "Perlu Muraja'ah", list: santriMurajaah })}
+              className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200/70 active:scale-95 flex items-center justify-center text-slate-600 transition-all cursor-pointer"
+              title="Lihat Santri Perlu Muraja'ah"
+            >
               <ArrowUpRight size={16} />
             </div>
           </div>
@@ -250,43 +297,78 @@ export default function DashboardOverview({
 
       {/* Middle Row: Analytics & Reminders & Classes */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        {/* Left: Weekly Activity Bar Chart (5 cols) */}
+        {/* Left: Santri Ranking Bar Chart (5 cols) */}
         <div className="lg:col-span-5 bg-white p-6 rounded-3xl border border-slate-200/70 shadow-card flex flex-col justify-between">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-sm font-bold text-slate-800">
-                Aktivitas Setoran Pekanan
+                Peringkat Hafalan Santri
               </h2>
-              <p className="text-xs text-slate-400">Intensitas hafalan per hari</p>
+              <p className="text-xs text-slate-400">Top 7 santri surah terbanyak (Kanan #1 s/d Kiri #7)</p>
             </div>
-            <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
-              Pekan Ini
+            <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100 flex items-center gap-1">
+              <Trophy size={13} className="text-emerald-600" />
+              <span>Top 7</span>
             </span>
           </div>
 
-          {/* Styled pill bars */}
-          <div className="flex items-end justify-between gap-3 pt-6 pb-2 px-2">
-            {daysOfWeek.map((day, idx) => {
-              const height = barHeights[idx];
-              const isPeak = height >= 90;
+          {/* Styled pill bars for Top 7 Santri */}
+          <div className="flex items-end justify-between gap-2.5 pt-6 pb-2 px-1">
+            {displayBars.map((item) => {
+              const heightPct = Math.max(Math.round((item.surahCount / maxSurahCount) * 100), 18);
+              const isRank1 = item.rank === 1;
+              const isTop3 = item.rank <= 3;
+              const santriName = item.santri.name || item.santri.fullName || 'Santri';
+              const shortName = santriName.split(' ')[0];
+              const avatarSrc = item.santri.avatar || item.santri.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(santriName)}`;
+
               return (
-                <div key={idx} className="flex flex-col items-center gap-2 flex-1">
-                  <div className="w-full bg-slate-100 h-36 rounded-full flex flex-col justify-end p-1 relative group">
+                <div
+                  key={item.santri.id}
+                  onClick={() => setSelectedRankSantriModal({ santri: item.santri, rank: item.rank, surahCount: item.surahCount })}
+                  className="flex flex-col items-center gap-2 flex-1 cursor-pointer group"
+                  title={`Klik untuk melihat detail ${santriName}`}
+                >
+                  <div className="w-full bg-slate-100 h-36 rounded-full flex flex-col justify-end p-1 relative">
+                    {/* Hover Floating Card showing Name & Photo */}
+                    <div className="absolute -top-14 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs p-1.5 rounded-xl opacity-0 group-hover:opacity-100 transition-all pointer-events-none whitespace-nowrap font-semibold shadow-lg z-20 flex items-center gap-2 border border-slate-700">
+                      <img
+                        src={avatarSrc}
+                        alt={santriName}
+                        className="w-6 h-6 rounded-full object-cover border border-white/40 bg-slate-200"
+                      />
+                      <div className="text-left">
+                        <p className="text-[11px] font-bold leading-tight">{santriName}</p>
+                        <p className="text-[9px] text-emerald-300 font-medium">Rank #{item.rank} • {item.surahCount} Surah</p>
+                      </div>
+                    </div>
+
                     <div
-                      style={{ height: `${height}%` }}
-                      className={`w-full rounded-full transition-all duration-500 ${
-                        isPeak
-                          ? 'bg-brand-dark shadow-xs'
-                          : height > 60
-                          ? 'bg-emerald-500'
-                          : 'bg-emerald-200'
+                      style={{ height: `${heightPct}%` }}
+                      className={`w-full rounded-full transition-all duration-500 relative flex flex-col items-center justify-start pt-1.5 ${
+                        isRank1
+                          ? 'bg-brand-dark shadow-md ring-2 ring-emerald-400/40'
+                          : isTop3
+                          ? 'bg-emerald-500 shadow-xs'
+                          : 'bg-emerald-300'
                       }`}
-                    />
-                    <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap font-bold">
-                      {height}%
+                    >
+                      {/* Surah count badge inside bar top */}
+                      <span className="text-[10px] font-extrabold text-white leading-none">
+                        {item.surahCount}
+                      </span>
                     </div>
                   </div>
-                  <span className="text-xs font-bold text-slate-500">{day}</span>
+
+                  {/* Underneath: Rank & Short Name */}
+                  <div className="text-center">
+                    <span className={`text-[10px] font-bold block ${isRank1 ? 'text-brand-dark' : 'text-slate-700'}`}>
+                      #{item.rank}
+                    </span>
+                    <span className="text-[10px] font-semibold text-slate-500 block truncate max-w-[45px]" title={santriName}>
+                      {shortName}
+                    </span>
+                  </div>
                 </div>
               );
             })}
@@ -573,6 +655,150 @@ export default function DashboardOverview({
           </div>
         </div>
       </div>
+
+      {/* Category Santri List Modal (Only photo & name displayed) */}
+      {selectedCategoryModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-scaleUp">
+            {/* Modal Header */}
+            <div className="p-5 bg-brand-dark text-white flex items-center justify-between">
+              <div>
+                <h3 className="font-extrabold text-base sm:text-lg">
+                  {selectedCategoryModal.title}
+                </h3>
+                <p className="text-xs text-emerald-300 font-medium mt-0.5">
+                  Total {selectedCategoryModal.list.length} Santri
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedCategoryModal(null)}
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Body: List of santri (STRICTLY avatar + name only) */}
+            <div className="p-5 overflow-y-auto space-y-3">
+              {selectedCategoryModal.list.length === 0 ? (
+                <div className="text-center py-10 text-slate-400">
+                  <p className="text-sm font-medium">Belum ada santri dalam kategori ini</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {selectedCategoryModal.list.map((santri) => {
+                    const displayName = santri.name || santri.fullName || 'Santri';
+                    const avatarSrc = santri.avatar || santri.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(displayName)}`;
+
+                    return (
+                      <div
+                        key={santri.id}
+                        onClick={() => {
+                          if (onSelectSantri) {
+                            onSelectSantri(santri);
+                            setSelectedCategoryModal(null);
+                          }
+                        }}
+                        className="flex items-center gap-3.5 p-3 rounded-2xl bg-slate-50 border border-slate-100 hover:border-emerald-300 hover:bg-emerald-50/40 transition-all cursor-pointer group shadow-2xs"
+                      >
+                        <img
+                          src={avatarSrc}
+                          alt={displayName}
+                          className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-xs group-hover:scale-105 transition-transform bg-slate-200"
+                        />
+                        <span className="font-bold text-slate-800 text-sm group-hover:text-brand-dark transition-colors line-clamp-2">
+                          {displayName}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+              <button
+                onClick={() => setSelectedCategoryModal(null)}
+                className="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold text-xs rounded-xl transition-colors"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Selected Rank Santri Detail Modal (Name & Profile Photo when clicked) */}
+      {selectedRankSantriModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-scaleUp">
+            {/* Header */}
+            <div className="p-4 bg-brand-dark text-white flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Trophy size={18} className="text-emerald-400" />
+                <h3 className="font-extrabold text-sm sm:text-base">
+                  Peringkat #{selectedRankSantriModal.rank} Hafalan
+                </h3>
+              </div>
+              <button
+                onClick={() => setSelectedRankSantriModal(null)}
+                className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Content: Photo & Name strictly */}
+            <div className="p-6 text-center flex flex-col items-center gap-4">
+              <div className="relative">
+                <img
+                  src={
+                    selectedRankSantriModal.santri.avatar ||
+                    selectedRankSantriModal.santri.avatar_url ||
+                    `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(selectedRankSantriModal.santri.name || 'Santri')}`
+                  }
+                  alt={selectedRankSantriModal.santri.name}
+                  className="w-24 h-24 rounded-full object-cover border-4 border-emerald-100 shadow-md bg-slate-100"
+                />
+                <span className="absolute -bottom-1 -right-1 bg-brand-dark text-white text-[11px] font-extrabold px-2 py-0.5 rounded-full border-2 border-white shadow-xs">
+                  #{selectedRankSantriModal.rank}
+                </span>
+              </div>
+
+              <div>
+                <h4 className="text-lg font-extrabold text-slate-900">
+                  {selectedRankSantriModal.santri.name || selectedRankSantriModal.santri.fullName}
+                </h4>
+                <p className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100 mt-2 inline-block">
+                  {selectedRankSantriModal.surahCount} Surah Dihafal
+                </p>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-2">
+              <button
+                onClick={() => setSelectedRankSantriModal(null)}
+                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold text-xs rounded-xl transition-colors"
+              >
+                Tutup
+              </button>
+              {onSelectSantri && (
+                <button
+                  onClick={() => {
+                    onSelectSantri(selectedRankSantriModal.santri);
+                    setSelectedRankSantriModal(null);
+                  }}
+                  className="px-4 py-2 bg-brand-dark hover:bg-brand-light text-white font-semibold text-xs rounded-xl transition-colors"
+                >
+                  Buka Rapor Santri
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

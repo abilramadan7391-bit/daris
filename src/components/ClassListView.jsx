@@ -29,10 +29,10 @@ export default function ClassListView({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight">
-            Kelas & Halaqah
+            Kelas
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Daftar kelompok halaqah tahfidz dan ustadz pengampu di Madrasah Darul Istiqomah.
+            Daftar kelas TPQ/Madrasah Darul Istiqomah
           </p>
         </div>
 

@@ -328,6 +328,10 @@ export const dataService = {
           target_juz: Number(santri.targetJuz) || 30,
           status: 'Aktif'
         };
+        if (santri.avatar) {
+          payload.avatar_url = santri.avatar;
+          payload.avatar = santri.avatar;
+        }
         if (isValidUUID(santri.classId)) {
           payload.class_id = santri.classId;
         }
@@ -340,7 +344,7 @@ export const dataService = {
     const current = getLocal(STORAGE_KEYS.SANTRI, INITIAL_SANTRI);
     const created = normalizeSantri({
       id: `san-${Date.now()}`,
-      avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(santri.fullName)}`,
+      avatar: santri.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(santri.fullName)}`,
       status: 'Aktif',
       ...santri
     });
@@ -350,7 +354,9 @@ export const dataService = {
   },
 
   async updateSantri(santriId, updates) {
-    if (isSupabaseConfigured && supabase && isValidUUID(santriId)) {
+    let updatedSantri = null;
+
+    if (isSupabaseConfigured && supabase) {
       try {
         const payload = {};
         if (updates.fullName) payload.full_name = updates.fullName;
@@ -359,18 +365,31 @@ export const dataService = {
         if (updates.parentName) payload.parent_name = updates.parentName;
         if (updates.parentPhone) payload.parent_phone = updates.parentPhone;
         if (updates.targetJuz) payload.target_juz = Number(updates.targetJuz);
+        if (updates.avatar !== undefined) {
+          payload.avatar_url = updates.avatar;
+          payload.avatar = updates.avatar;
+        }
         if (isValidUUID(updates.classId)) payload.class_id = updates.classId;
 
-        const { data, error } = await supabase.from('santri').update(payload).eq('id', santriId).select().single();
-        if (!error && data) return normalizeSantri(data);
+        const { data, error } = await supabase.from('santri').update(payload).eq('id', String(santriId)).select().maybeSingle();
+        if (!error && data) {
+          updatedSantri = normalizeSantri(data);
+        } else if (error) {
+          console.warn('Supabase updateSantri error, saving to local fallback:', error);
+        }
       } catch (e) {
-        console.error('Supabase updateSantri error:', e);
+        console.error('Supabase updateSantri exception:', e);
       }
     }
+
     const current = getLocal(STORAGE_KEYS.SANTRI, INITIAL_SANTRI);
-    const updated = current.map(s => s.id === santriId ? normalizeSantri({ ...s, ...updates }) : s);
-    setLocal(STORAGE_KEYS.SANTRI, updated);
-    return updated.find(s => s.id === santriId);
+    const updatedList = current.map(s => String(s.id) === String(santriId) ? normalizeSantri({ ...s, ...updates }) : s);
+    setLocal(STORAGE_KEYS.SANTRI, updatedList);
+
+    if (!updatedSantri) {
+      updatedSantri = updatedList.find(s => String(s.id) === String(santriId));
+    }
+    return updatedSantri;
   },
 
   // --- SETORAN ---

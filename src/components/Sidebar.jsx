@@ -35,7 +35,7 @@ export default function Sidebar({
     },
     {
       id: 'classes',
-      label: 'Kelas & Halaqah',
+      label: 'Kelas',
       icon: BookOpen,
       badge: counts.classes
     },

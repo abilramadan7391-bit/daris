@@ -50,7 +50,7 @@ export default function StudentListView({
             Data Santri
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Daftar seluruh santri tahfidzul quran Madrasah Darul Istiqomah.
+            Daftar seluruh santri TPQ/Madrasah Darul Istiqomah (Dari kelas yang sudah terdaftar)
           </p>
         </div>
 
