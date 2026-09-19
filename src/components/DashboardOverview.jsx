@@ -113,7 +113,7 @@ export default function DashboardOverview({
     return (
       <div className="mt-2 space-y-1.5">
         <div className="w-full h-2 rounded-full bg-slate-100 flex overflow-hidden shadow-inner">
-          {segments.map(({ cls, pct, color }) => (
+          {segments.map(({ cls, cnt, pct, color }) => (
             <div
               key={cls.id}
               style={{ width: `${pct}%` }}
