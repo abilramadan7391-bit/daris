@@ -27,6 +27,19 @@ export default function DashboardOverview({
   const isAdmin = currentUser?.role === 'admin';
   const canRecord = isAdmin || isUstadz;
 
+  // Filter out bulk / input massal setoran records from Dashboard statistics & feed
+  const regularSetoranList = setoranList.filter(s => {
+    const isBulk = s.isBulk || s.is_bulk || (s.notes && s.notes.includes('Input setoran awal'));
+    return !isBulk;
+  });
+
+  const totalSantri = santriList.length;
+  const gradeACount = regularSetoranList.filter(s => s.predikat === 'A').length;
+  const gradeBCount = regularSetoranList.filter(s => s.predikat === 'B').length;
+  const gradeCCount = regularSetoranList.filter(s => s.predikat === 'C').length;
+  const totalSetoran = regularSetoranList.length || 1;
+  const mutqinPercentage = Math.round((gradeACount / totalSetoran) * 100);
+
   // Palette of colors assigned to classes
   const CLASS_PALETTE = [
     { bg: 'bg-emerald-500', dot: 'bg-emerald-500', text: 'text-emerald-700' },
