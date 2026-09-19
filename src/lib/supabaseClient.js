@@ -301,27 +301,73 @@ export const dataService = {
 
   // --- SANTRI ---
   async getSantri() {
+    let remoteList = [];
     if (isSupabaseConfigured && supabase) {
       try {
         const { data, error } = await supabase.from('santri').select('*').order('full_name');
         if (!error && Array.isArray(data)) {
-          return data.map(normalizeSantri);
+          remoteList = data.map(normalizeSantri);
         }
       } catch (e) {
         console.error('Supabase getSantri error, falling back:', e);
       }
     }
-    const local = getLocal(STORAGE_KEYS.SANTRI, []);
-    return (local || []).map(normalizeSantri);
+    const local = getLocal(STORAGE_KEYS.SANTRI, INITIAL_SANTRI);
+    const localList = (local || []).map(normalizeSantri);
+
+    if (remoteList.length === 0) {
+      return localList;
+    }
+
+    const map = new Map();
+    remoteList.forEach(s => map.set(String(s.id), s));
+    localList.forEach(ls => {
+      const existing = map.get(String(ls.id));
+      if (!existing) {
+        if (ls.fullName && ls.fullName !== 'Santri') {
+          map.set(String(ls.id), ls);
+        }
+      } else {
+        const merged = { ...existing };
+        if (ls.avatar && !ls.avatar.includes('dicebear')) {
+          merged.avatar = ls.avatar;
+          merged.avatar_url = ls.avatar;
+        }
+        if (ls.fullName && ls.fullName !== 'Santri') merged.fullName = ls.fullName;
+        if (ls.nickname) merged.nickname = ls.nickname;
+        if (ls.nis) merged.nis = ls.nis;
+        if (ls.classId) merged.classId = ls.classId;
+        if (ls.parentName) merged.parentName = ls.parentName;
+        if (ls.parentPhone) merged.parentPhone = ls.parentPhone;
+        if (ls.gender) merged.gender = ls.gender;
+        if (ls.status) merged.status = ls.status;
+
+        map.set(String(ls.id), normalizeSantri(merged));
+      }
+    });
+
+    const result = Array.from(map.values());
+    setLocal(STORAGE_KEYS.SANTRI, result);
+    return result;
   },
 
   async addSantri(santri) {
+    const current = getLocal(STORAGE_KEYS.SANTRI, INITIAL_SANTRI);
+    const created = normalizeSantri({
+      id: `san-${Date.now()}`,
+      avatar: santri.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(santri.fullName || 'Santri')}`,
+      status: 'Aktif',
+      ...santri
+    });
+    const updated = [created, ...current];
+    setLocal(STORAGE_KEYS.SANTRI, updated);
+
     if (isSupabaseConfigured && supabase) {
       try {
         const payload = {
           nis: santri.nis,
           full_name: santri.fullName,
-          nickname: santri.nickname || santri.fullName.split(' ')[0],
+          nickname: santri.nickname || (santri.fullName ? santri.fullName.split(' ')[0] : 'Santri'),
           gender: santri.gender || 'L',
           parent_name: santri.parentName || '',
           parent_phone: santri.parentPhone || '',
@@ -341,20 +387,27 @@ export const dataService = {
         console.error('Supabase addSantri error:', e);
       }
     }
-    const current = getLocal(STORAGE_KEYS.SANTRI, INITIAL_SANTRI);
-    const created = normalizeSantri({
-      id: `san-${Date.now()}`,
-      avatar: santri.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(santri.fullName)}`,
-      status: 'Aktif',
-      ...santri
-    });
-    const updated = [created, ...current];
-    setLocal(STORAGE_KEYS.SANTRI, updated);
     return created;
   },
 
   async updateSantri(santriId, updates) {
-    let updatedSantri = null;
+    const current = getLocal(STORAGE_KEYS.SANTRI, INITIAL_SANTRI);
+    let found = false;
+    const updatedList = current.map(s => {
+      if (String(s.id) === String(santriId)) {
+        found = true;
+        return { ...s, ...updates };
+      }
+      return s;
+    });
+
+    if (!found) {
+      updatedList.push({ id: santriId, ...updates });
+    }
+
+    setLocal(STORAGE_KEYS.SANTRI, updatedList);
+
+    let updatedSantri = updatedList.find(s => String(s.id) === String(santriId));
 
     if (isSupabaseConfigured && supabase) {
       try {
@@ -371,44 +424,82 @@ export const dataService = {
         }
         if (isValidUUID(updates.classId)) payload.class_id = updates.classId;
 
-        const { data, error } = await supabase.from('santri').update(payload).eq('id', String(santriId)).select().maybeSingle();
-        if (!error && data) {
-          updatedSantri = normalizeSantri(data);
-        } else if (error) {
-          console.warn('Supabase updateSantri error, saving to local fallback:', error);
+        if (Object.keys(payload).length > 0) {
+          const { data, error } = await supabase.from('santri').update(payload).eq('id', String(santriId)).select().maybeSingle();
+          if (!error && data) {
+            updatedSantri = normalizeSantri(data);
+          }
         }
       } catch (e) {
         console.error('Supabase updateSantri exception:', e);
       }
     }
 
-    const current = getLocal(STORAGE_KEYS.SANTRI, INITIAL_SANTRI);
-    const updatedList = current.map(s => String(s.id) === String(santriId) ? normalizeSantri({ ...s, ...updates }) : s);
-    setLocal(STORAGE_KEYS.SANTRI, updatedList);
-
-    if (!updatedSantri) {
-      updatedSantri = updatedList.find(s => String(s.id) === String(santriId));
-    }
     return updatedSantri;
+  },
+
+  async deleteSantri(santriId) {
+    const currentSantri = getLocal(STORAGE_KEYS.SANTRI, INITIAL_SANTRI);
+    const updatedSantri = currentSantri.filter(s => String(s.id) !== String(santriId));
+    setLocal(STORAGE_KEYS.SANTRI, updatedSantri);
+
+    const currentSetoran = getLocal(STORAGE_KEYS.SETORAN, INITIAL_SETORAN);
+    const updatedSetoran = currentSetoran.filter(s => String(s.santriId) !== String(santriId));
+    setLocal(STORAGE_KEYS.SETORAN, updatedSetoran);
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('setoran').delete().eq('santri_id', String(santriId));
+        await supabase.from('santri').delete().eq('id', String(santriId));
+      } catch (e) {
+        console.error('Supabase deleteSantri error:', e);
+      }
+    }
+
+    return true;
   },
 
   // --- SETORAN ---
   async getSetoran() {
+    let remoteList = [];
     if (isSupabaseConfigured && supabase) {
       try {
         const { data, error } = await supabase.from('setoran').select('*').order('created_at', { ascending: false });
         if (!error && Array.isArray(data)) {
-          return data.map(normalizeSetoran);
+          remoteList = data.map(normalizeSetoran);
         }
       } catch (e) {
         console.error('Supabase getSetoran error, falling back:', e);
       }
     }
-    const local = getLocal(STORAGE_KEYS.SETORAN, []);
-    return (local || []).map(normalizeSetoran);
+    const local = getLocal(STORAGE_KEYS.SETORAN, INITIAL_SETORAN);
+    const localList = (local || []).map(normalizeSetoran);
+
+    if (remoteList.length === 0) {
+      return localList;
+    }
+
+    const map = new Map();
+    localList.forEach(s => map.set(String(s.id), s));
+    remoteList.forEach(s => {
+      if (!map.has(String(s.id))) {
+        map.set(String(s.id), s);
+      }
+    });
+
+    return Array.from(map.values());
   },
 
   async addSetoran(record) {
+    const current = getLocal(STORAGE_KEYS.SETORAN, INITIAL_SETORAN);
+    const created = normalizeSetoran({
+      id: `set-${Date.now()}`,
+      date: record.date || new Date().toISOString().split('T')[0],
+      ...record
+    });
+    const updated = [created, ...current];
+    setLocal(STORAGE_KEYS.SETORAN, updated);
+
     if (isSupabaseConfigured && supabase) {
       try {
         const payload = {
@@ -431,19 +522,23 @@ export const dataService = {
         console.error('Supabase addSetoran error:', e);
       }
     }
-    const current = getLocal(STORAGE_KEYS.SETORAN, INITIAL_SETORAN);
-    const created = normalizeSetoran({
-      id: `set-${Date.now()}`,
-      date: new Date().toISOString().split('T')[0],
-      ...record
-    });
-    const updated = [created, ...current];
-    setLocal(STORAGE_KEYS.SETORAN, updated);
+
     return created;
   },
 
   async addSetoranBatch(records) {
     if (!records || records.length === 0) return [];
+
+    const current = getLocal(STORAGE_KEYS.SETORAN, INITIAL_SETORAN);
+    const createdList = records.map((record, idx) => normalizeSetoran({
+      id: `set-${Date.now()}-${idx}`,
+      date: record.date || new Date().toISOString().split('T')[0],
+      isBulk: true,
+      ...record
+    }));
+    const updated = [...createdList, ...current];
+    setLocal(STORAGE_KEYS.SETORAN, updated);
+
     if (isSupabaseConfigured && supabase) {
       try {
         const payloads = records.map(record => {
@@ -464,21 +559,12 @@ export const dataService = {
           return payload;
         });
 
-        const { data, error } = await supabase.from('setoran').insert(payloads).select();
-        if (!error && data) return data.map(normalizeSetoran);
+        await supabase.from('setoran').insert(payloads).select();
       } catch (e) {
         console.error('Supabase addSetoranBatch error:', e);
       }
     }
-    const current = getLocal(STORAGE_KEYS.SETORAN, INITIAL_SETORAN);
-    const createdList = records.map((record, idx) => normalizeSetoran({
-      id: `set-${Date.now()}-${idx}`,
-      date: record.date || new Date().toISOString().split('T')[0],
-      isBulk: true,
-      ...record
-    }));
-    const updated = [...createdList, ...current];
-    setLocal(STORAGE_KEYS.SETORAN, updated);
+
     return createdList;
   },
 

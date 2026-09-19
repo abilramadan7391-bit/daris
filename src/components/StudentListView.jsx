@@ -7,7 +7,9 @@ import {
   PenTool,
   Award,
   ChevronRight,
-  BookOpen
+  BookOpen,
+  Trash2,
+  Pencil
 } from 'lucide-react';
 
 export default function StudentListView({
@@ -17,7 +19,9 @@ export default function StudentListView({
   currentUser,
   onSelectSantri,
   onOpenSetoranForSantri,
-  onOpenAddSantri
+  onOpenAddSantri,
+  onDeleteSantri,
+  onEditSantri
 }) {
   const [search, setSearch] = useState('');
   const [selectedClassFilter, setSelectedClassFilter] = useState('ALL');
@@ -185,14 +189,36 @@ export default function StudentListView({
                   </button>
 
                   {(isAdmin || isUstadz) && (
-                    <button
-                      onClick={() => onOpenSetoranForSantri(santri)}
-                      className="py-2 px-3 rounded-xl bg-brand-dark hover:bg-brand-light text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1"
-                      title="Catat Setoran"
-                    >
-                      <PenTool size={14} className="text-emerald-400" />
-                      <span>Setor</span>
-                    </button>
+                    <>
+                      <button
+                        onClick={() => onOpenSetoranForSantri(santri)}
+                        className="py-2 px-3 rounded-xl bg-brand-dark hover:bg-brand-light text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1"
+                        title="Catat Setoran"
+                      >
+                        <PenTool size={14} className="text-emerald-400" />
+                        <span>Setor</span>
+                      </button>
+
+                      {onEditSantri && (
+                        <button
+                          onClick={() => onEditSantri(santri)}
+                          className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                          title="Edit Data Santri"
+                        >
+                          <Pencil size={15} />
+                        </button>
+                      )}
+
+                      {onDeleteSantri && (
+                        <button
+                          onClick={() => onDeleteSantri(santri.id)}
+                          className="p-2 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                          title="Hapus Santri"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
               </div>

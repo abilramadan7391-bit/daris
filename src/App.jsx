@@ -63,6 +63,12 @@ export default function App() {
     setClassList(classes);
     setSantriList(santri);
     setSetoranList(setoran);
+
+    setSelectedSantri(prev => {
+      if (!prev) return null;
+      const updated = santri.find(item => String(item.id) === String(prev.id));
+      return updated ? updated : prev;
+    });
   };
 
   useEffect(() => {
@@ -81,7 +87,6 @@ export default function App() {
       return;
     }
 
-    // Baik Admin maupun Ustadz/Ustadzah membutuhkan PIN jika kelas belum di-unlock
     if (dataService.isClassUnlocked(cls.id)) {
       setSelectedClass(cls);
     } else {
@@ -161,8 +166,15 @@ export default function App() {
   const handleUpdateSantri = async (santriId, updates) => {
     await dataService.updateSantri(santriId, updates);
     await reloadData();
-    if (selectedSantri && selectedSantri.id === santriId) {
-      setSelectedSantri(prev => prev ? { ...prev, ...updates } : null);
+  };
+
+  const handleDeleteSantri = async (santriId) => {
+    if (window.confirm('Apakah Anda yakin ingin menghapus data santri ini? Seluruh riwayat setoran santri ini juga akan dihapus.')) {
+      await dataService.deleteSantri(santriId);
+      if (selectedSantri && String(selectedSantri.id) === String(santriId)) {
+        setSelectedSantri(null);
+      }
+      await reloadData();
     }
   };
 
@@ -266,6 +278,7 @@ export default function App() {
                 onOpenAddSantri={handleOpenAddSantri}
                 onSelectSantri={(s) => handleSelectSantri(s)}
                 onEditSantri={handleEditSantri}
+                onDeleteSantri={handleDeleteSantri}
               />
             ) : (
               <ClassListView
@@ -289,6 +302,8 @@ export default function App() {
               onSelectSantri={(santri) => handleSelectSantri(santri)}
               onOpenSetoranForSantri={(santri) => handleOpenSetoran(santri)}
               onOpenAddSantri={() => handleOpenAddSantri()}
+              onDeleteSantri={handleDeleteSantri}
+              onEditSantri={handleEditSantri}
             />
           )}
 
@@ -349,6 +364,7 @@ export default function App() {
           onEditSetoran={(setoran) => handleOpenSetoran(null, setoran)}
           onDeleteSetoran={handleDeleteSetoran}
           onUpdateSantri={handleUpdateSantri}
+          onDeleteSantri={handleDeleteSantri}
         />
       )}
 

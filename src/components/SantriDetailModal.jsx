@@ -118,6 +118,19 @@ export default function SantriDetailModal({
               <Printer size={16} />
               <span className="hidden sm:inline">Cetak Rapor</span>
             </button>
+            {canRecord && onDeleteSantri && (
+              <button
+                onClick={() => {
+                  onClose();
+                  onDeleteSantri(santri.id);
+                }}
+                className="p-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 transition-colors text-xs font-semibold flex items-center gap-1.5"
+                title="Hapus Data Santri Ini"
+              >
+                <Trash2 size={16} />
+                <span className="hidden sm:inline">Hapus Santri</span>
+              </button>
+            )}
             <button
               onClick={onClose}
               className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"

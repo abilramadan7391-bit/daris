@@ -126,7 +126,7 @@ export default function BulkSetoranModal({
       return;
     }
 
-    const santri = santriList.find(s => s.id === selectedSantriId);
+    const santri = santriList.find(s => String(s.id) === String(selectedSantriId));
     if (!santri) {
       setError('Data santri tidak ditemukan.');
       return;
@@ -137,13 +137,13 @@ export default function BulkSetoranModal({
 
     try {
       const records = selectedSurahIds.map(surahId => {
-        const surah = surahsList.find(s => (s.id || s.number) === surahId);
+        const surah = surahsList.find(s => String(s.id) === String(surahId) || String(s.number) === String(surahId));
         const name = surah ? (surah.nameLatin || surah.name_latin) : `Surah ${surahId}`;
         const totalAyat = surah ? (surah.totalAyat ?? surah.total_ayat ?? 1) : 1;
 
         return {
           santriId: santri.id,
-          santriName: santri.fullName,
+          santriName: santri.fullName || santri.name || 'Santri',
           classId: santri.classId,
           surahId: surah ? surah.id || surah.number : surahId,
           surahName: name,

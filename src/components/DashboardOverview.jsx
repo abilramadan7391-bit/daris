@@ -11,7 +11,9 @@ import {
   Pencil,
   Trash2,
   X,
-  Trophy
+  Trophy,
+  Filter,
+  ChevronDown
 } from 'lucide-react';
 import { DEFAULT_JUZ_AMMA_SURAHS } from '../data/initialData';
 
@@ -29,10 +31,15 @@ export default function DashboardOverview({
 }) {
   const [selectedCategoryModal, setSelectedCategoryModal] = useState(null);
   const [selectedRankSantriModal, setSelectedRankSantriModal] = useState(null);
+  const [selectedRankClassFilter, setSelectedRankClassFilter] = useState('ALL');
 
   // Compute ranking of top 7 santri based on memorized surah count in Rapor
   const santriRankList = React.useMemo(() => {
-    const list = santriList.map(santri => {
+    const filteredSantri = selectedRankClassFilter === 'ALL'
+      ? santriList
+      : santriList.filter(s => String(s.classId) === String(selectedRankClassFilter));
+
+    const list = filteredSantri.map(santri => {
       const passedSetoran = setoranList.filter(
         s => String(s.santriId) === String(santri.id) && (s.predikat === 'A' || s.predikat === 'B')
       );
@@ -50,7 +57,7 @@ export default function DashboardOverview({
       ...item,
       rank: idx + 1
     }));
-  }, [santriList, setoranList]);
+  }, [santriList, setoranList, selectedRankClassFilter]);
 
   // Order from right to left (Rank 1 at far right, Rank 7 at far left)
   const displayBars = React.useMemo(() => {
@@ -299,107 +306,152 @@ export default function DashboardOverview({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* Left: Santri Ranking Bar Chart (5 cols) */}
         <div className="lg:col-span-5 bg-white p-6 rounded-3xl border border-slate-200/70 shadow-card flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-sm font-bold text-slate-800">
-                Peringkat Hafalan Santri
-              </h2>
-              <p className="text-xs text-slate-400">Top 7 santri surah terbanyak (Kanan #1 s/d Kiri #7)</p>
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <h2 className="text-sm font-bold text-slate-800">
+              Peringkat Hafalan Santri
+            </h2>
+            <div className="relative inline-flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200/80 px-2.5 py-1 rounded-full text-xs font-bold transition-all shadow-2xs">
+              <Filter size={13} className="text-emerald-600 shrink-0" />
+              <select
+                value={selectedRankClassFilter}
+                onChange={(e) => setSelectedRankClassFilter(e.target.value)}
+                className="bg-transparent text-emerald-800 text-xs font-bold focus:outline-none cursor-pointer appearance-none pr-3"
+              >
+                <option value="ALL">Semua Kelas</option>
+                {classList.map((cls) => (
+                  <option key={cls.id} value={cls.id}>
+                    {cls.name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={13} className="text-emerald-600 shrink-0 absolute right-2.5 pointer-events-none" />
             </div>
-            <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100 flex items-center gap-1">
-              <Trophy size={13} className="text-emerald-600" />
-              <span>Top 7</span>
-            </span>
           </div>
 
           {/* Styled pill bars for Top 7 Santri */}
-          <div className="flex items-end justify-between gap-2.5 pt-6 pb-2 px-1">
-            {displayBars.map((item) => {
-              const heightPct = Math.max(Math.round((item.surahCount / maxSurahCount) * 100), 18);
-              const isRank1 = item.rank === 1;
-              const isTop3 = item.rank <= 3;
-              const santriName = item.santri.name || item.santri.fullName || 'Santri';
-              const shortName = santriName.split(' ')[0];
-              const avatarSrc = item.santri.avatar || item.santri.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(santriName)}`;
+          {displayBars.length === 0 ? (
+            <div className="py-12 text-center text-slate-400">
+              <p className="text-xs font-medium">Belum ada santri di kelas ini</p>
+            </div>
+          ) : (
+            <div className="flex items-end justify-between gap-2.5 pt-6 pb-2 px-1">
+              {displayBars.map((item) => {
+                const heightPct = Math.max(Math.round((item.surahCount / maxSurahCount) * 100), 18);
+                const isRank1 = item.rank === 1;
+                const isTop3 = item.rank <= 3;
+                const santriName = item.santri.name || item.santri.fullName || 'Santri';
+                const shortName = santriName.split(' ')[0];
+                const avatarSrc = item.santri.avatar || item.santri.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(santriName)}`;
 
-              return (
-                <div
-                  key={item.santri.id}
-                  onClick={() => setSelectedRankSantriModal({ santri: item.santri, rank: item.rank, surahCount: item.surahCount })}
-                  className="flex flex-col items-center gap-2 flex-1 cursor-pointer group"
-                  title={`Klik untuk melihat detail ${santriName}`}
-                >
-                  <div className="w-full bg-slate-100 h-36 rounded-full flex flex-col justify-end p-1 relative">
-                    {/* Hover Floating Card showing Name & Photo */}
-                    <div className="absolute -top-14 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs p-1.5 rounded-xl opacity-0 group-hover:opacity-100 transition-all pointer-events-none whitespace-nowrap font-semibold shadow-lg z-20 flex items-center gap-2 border border-slate-700">
-                      <img
-                        src={avatarSrc}
-                        alt={santriName}
-                        className="w-6 h-6 rounded-full object-cover border border-white/40 bg-slate-200"
-                      />
-                      <div className="text-left">
-                        <p className="text-[11px] font-bold leading-tight">{santriName}</p>
-                        <p className="text-[9px] text-emerald-300 font-medium">Rank #{item.rank} • {item.surahCount} Surah</p>
+                return (
+                  <div
+                    key={item.santri.id}
+                    onClick={() => setSelectedRankSantriModal({ santri: item.santri, rank: item.rank, surahCount: item.surahCount })}
+                    className="flex flex-col items-center gap-2 flex-1 cursor-pointer group"
+                    title={`Klik untuk melihat detail ${santriName}`}
+                  >
+                    <div className="w-full bg-slate-100 h-36 rounded-full flex flex-col justify-end p-1 relative">
+                      {/* Hover Floating Card showing Name & Photo */}
+                      <div className="absolute -top-14 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs p-1.5 rounded-xl opacity-0 group-hover:opacity-100 transition-all pointer-events-none whitespace-nowrap font-semibold shadow-lg z-20 flex items-center gap-2 border border-slate-700">
+                        <img
+                          src={avatarSrc}
+                          alt={santriName}
+                          className="w-6 h-6 rounded-full object-cover border border-white/40 bg-slate-200"
+                        />
+                        <div className="text-left">
+                          <p className="text-[11px] font-bold leading-tight">{santriName}</p>
+                          <p className="text-[9px] text-emerald-300 font-medium">Rank #{item.rank} • {item.surahCount} Surah</p>
+                        </div>
+                      </div>
+
+                      <div
+                        style={{ height: `${heightPct}%` }}
+                        className={`w-full rounded-full transition-all duration-500 relative flex flex-col items-center justify-start pt-1.5 ${
+                          isRank1
+                            ? 'bg-brand-dark shadow-md ring-2 ring-emerald-400/40'
+                            : isTop3
+                            ? 'bg-emerald-500 shadow-xs'
+                            : 'bg-emerald-300'
+                        }`}
+                      >
+                        {/* Surah count badge inside bar top */}
+                        <span className="text-[10px] font-extrabold text-white leading-none">
+                          {item.surahCount}
+                        </span>
                       </div>
                     </div>
 
-                    <div
-                      style={{ height: `${heightPct}%` }}
-                      className={`w-full rounded-full transition-all duration-500 relative flex flex-col items-center justify-start pt-1.5 ${
-                        isRank1
-                          ? 'bg-brand-dark shadow-md ring-2 ring-emerald-400/40'
-                          : isTop3
-                          ? 'bg-emerald-500 shadow-xs'
-                          : 'bg-emerald-300'
-                      }`}
-                    >
-                      {/* Surah count badge inside bar top */}
-                      <span className="text-[10px] font-extrabold text-white leading-none">
-                        {item.surahCount}
+                    {/* Underneath: Rank & Short Name */}
+                    <div className="text-center">
+                      <span className={`text-[10px] font-bold block ${isRank1 ? 'text-brand-dark' : 'text-slate-700'}`}>
+                        #{item.rank}
+                      </span>
+                      <span className="text-[10px] font-semibold text-slate-500 block truncate max-w-[45px]" title={santriName}>
+                        {shortName}
                       </span>
                     </div>
                   </div>
-
-                  {/* Underneath: Rank & Short Name */}
-                  <div className="text-center">
-                    <span className={`text-[10px] font-bold block ${isRank1 ? 'text-brand-dark' : 'text-slate-700'}`}>
-                      #{item.rank}
-                    </span>
-                    <span className="text-[10px] font-semibold text-slate-500 block truncate max-w-[45px]" title={santriName}>
-                      {shortName}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
-        {/* Center: Reminders / Agenda Madrasah (4 cols) */}
+        {/* Center: Jadwal Setoran Card (4 cols) */}
         <div className="lg:col-span-4 bg-white p-6 rounded-3xl border border-slate-200/70 shadow-card flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                Agenda Tahfidz
+                Jadwal Setoran
               </span>
               <Calendar size={16} className="text-slate-400" />
             </div>
             <h3 className="text-lg font-bold text-slate-900 leading-snug">
-              Ujian Tasmi' Akbar Juz Amma (Juz 30)
+              Jadwal setoran Juz Amma (Juz 30)
             </h3>
-            <p className="text-xs text-slate-500 mt-2 flex items-center gap-1.5 font-medium">
-              <Clock size={13} className="text-emerald-600" />
-              Kamis, 08.00 - 11.30 WIB
-            </p>
-            <p className="text-xs text-slate-600 mt-3 leading-relaxed">
-              Santri yang telah menuntaskan setoran surah Al-A'la s/d An-Nas dijadwalkan mengikuti evaluasi kelancaran sekali duduk.
-            </p>
+
+            {/* Dynamic list of schedules per class */}
+            <div className="mt-3.5 space-y-2 max-h-[190px] overflow-y-auto pr-1 custom-scrollbar">
+              {classList.length === 0 ? (
+                <p className="text-xs text-slate-500 italic py-2">
+                  Belum ada kelas yang terdaftar.
+                </p>
+              ) : (
+                classList.map((cls) => (
+                  <div
+                    key={cls.id}
+                    onClick={() => onSelectClass && onSelectClass(cls)}
+                    className="p-2.5 rounded-2xl border border-slate-100 hover:border-emerald-200 bg-slate-50/50 hover:bg-emerald-50/30 transition-all cursor-pointer group flex items-center justify-between gap-2"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-slate-800 group-hover:text-emerald-800 truncate">
+                          {cls.name}
+                        </span>
+                        {cls.room && (
+                          <span className="text-[10px] text-slate-400 bg-white px-1.5 py-0.5 rounded border border-slate-200 shrink-0">
+                            {cls.room}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1.5 font-medium">
+                        <Clock size={12} className="text-emerald-600 shrink-0" />
+                        <span className="truncate">{cls.schedule || 'Senin - Kamis, 07.30 - 09.30 WIB'}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
 
           <div className="mt-4 pt-3 border-t border-slate-100">
-            <button className="w-full bg-brand-dark hover:bg-brand-light text-white font-semibold text-xs py-2.5 rounded-2xl flex items-center justify-center gap-2 transition-colors">
-              <Award size={15} className="text-emerald-400" />
-              <span>Daftar Santri Tasmi'</span>
+            <button
+              onClick={() => onOpenSetoranModal && onOpenSetoranModal()}
+              className="w-full bg-brand-dark hover:bg-brand-light text-white font-semibold text-xs py-2.5 rounded-2xl flex items-center justify-center gap-2 transition-colors"
+            >
+              <BookOpen size={15} className="text-emerald-400" />
+              <span>Input Setoran Hafalan</span>
             </button>
           </div>
         </div>
@@ -457,14 +509,6 @@ export default function DashboardOverview({
               </h2>
               <p className="text-xs text-slate-400">Pencatatan hafalan real-time</p>
             </div>
-            {canRecord && (
-              <button
-                onClick={onOpenSetoranModal}
-                className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-100"
-              >
-                + Input
-              </button>
-            )}
           </div>
 
           <div className="space-y-3.5">
@@ -623,7 +667,7 @@ export default function DashboardOverview({
           <div>
             <div className="flex items-center justify-between text-emerald-300">
               <span className="text-xs font-semibold uppercase tracking-wider">
-                Halaqah Qur'an
+                Tahfiz Qur'an
               </span>
               <BookOpen size={16} />
             </div>
@@ -631,7 +675,7 @@ export default function DashboardOverview({
               Darul Istiqomah
             </h3>
             <p className="text-xs text-emerald-200/80 mt-1">
-              Pondok & Madrasah Tahfidzul Qur'an
+              TPQ/Madrasah Darul Istiqomah
             </p>
           </div>
 

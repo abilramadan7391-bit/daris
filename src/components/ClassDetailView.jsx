@@ -9,7 +9,8 @@ import {
   Clock,
   KeyRound,
   ShieldCheck,
-  ChevronRight
+  ChevronRight,
+  Trash2
 } from 'lucide-react';
 
 export default function ClassDetailView({
@@ -21,7 +22,8 @@ export default function ClassDetailView({
   onOpenSetoranForSantri,
   onOpenAddSantri,
   onSelectSantri,
-  onEditSantri
+  onEditSantri,
+  onDeleteSantri
 }) {
   const isAdmin = currentUser?.role === 'admin';
   const isUstadz = currentUser?.role === 'ustadz' || currentUser?.role === 'ustadzah';
@@ -242,13 +244,24 @@ export default function ClassDetailView({
                           </button>
 
                           {canEdit && (
-                            <button
-                              onClick={() => onEditSantri(santri)}
-                              className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
-                              title="Edit Data Santri"
-                            >
-                              Edit
-                            </button>
+                            <>
+                              <button
+                                onClick={() => onEditSantri(santri)}
+                                className="p-1.5 px-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors text-[11px] font-bold"
+                                title="Edit Data Santri"
+                              >
+                                Edit
+                              </button>
+                              {onDeleteSantri && (
+                                <button
+                                  onClick={() => onDeleteSantri(santri.id)}
+                                  className="p-1.5 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                                  title="Hapus Data Santri"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              )}
+                            </>
                           )}
                         </div>
                       </td>
