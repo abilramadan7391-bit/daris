@@ -27,32 +27,95 @@ export default function DashboardOverview({
   const isAdmin = currentUser?.role === 'admin';
   const canRecord = isAdmin || isUstadz;
 
-  // Filter out bulk / input massal setoran records from Dashboard statistics & feed
-  const regularSetoranList = setoranList.filter(s => {
-    const isBulk = s.isBulk || s.is_bulk || (s.notes && s.notes.includes('Input setoran awal'));
-    return !isBulk;
-  });
+  // Palette of colors assigned to classes
+  const CLASS_PALETTE = [
+    { bg: 'bg-emerald-500', dot: 'bg-emerald-500', text: 'text-emerald-700' },
+    { bg: 'bg-indigo-500', dot: 'bg-indigo-500', text: 'text-indigo-700' },
+    { bg: 'bg-amber-500', dot: 'bg-amber-500', text: 'text-amber-700' },
+    { bg: 'bg-sky-500', dot: 'bg-sky-500', text: 'text-sky-700' },
+    { bg: 'bg-rose-500', dot: 'bg-rose-500', text: 'text-rose-700' },
+    { bg: 'bg-purple-500', dot: 'bg-purple-500', text: 'text-purple-700' },
+  ];
 
-  // Compute metrics
-  const totalSantri = santriList.length;
-  const now = new Date();
-  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const setoranThisWeek = regularSetoranList.filter(s => {
-    if (!s.date) return false;
-    const itemDate = new Date(s.date);
-    return itemDate >= sevenDaysAgo;
-  });
+  // Helper to check completed surahs for a santri (predikat A or B)
+  const getSantriCompletedSurahIds = (santriId) => {
+    const sList = setoranList.filter(s => s.santriId === santriId && (s.predikat === 'A' || s.predikat === 'B'));
+    const set = new Set();
+    sList.forEach(s => {
+      if (s.surahId) set.add(Number(s.surahId));
+    });
+    return set;
+  };
 
-  const gradeACount = regularSetoranList.filter(s => s.predikat === 'A').length;
-  const gradeBCount = regularSetoranList.filter(s => s.predikat === 'B').length;
-  const gradeCCount = regularSetoranList.filter(s => s.predikat === 'C').length;
-  const totalSetoran = regularSetoranList.length || 1;
+  // Range 1: An-Nas (114) down to Adh-Dhuha (93) - 22 Surahs
+  const adhDhuhaSurahIds = Array.from({ length: 22 }, (_, i) => 93 + i);
+  const checkAdhDhuha = (santriId) => {
+    const completedSet = getSantriCompletedSurahIds(santriId);
+    return adhDhuhaSurahIds.every(num => completedSet.has(num));
+  };
 
-  const mutqinPercentage = Math.round((gradeACount / totalSetoran) * 100);
+  // Range 2: An-Nas (114) down to An-Naba' (78) - 37 Surahs (Juz 30 Complete)
+  const anNabaSurahIds = Array.from({ length: 37 }, (_, i) => 78 + i);
+  const checkAnNaba = (santriId) => {
+    const completedSet = getSantriCompletedSurahIds(santriId);
+    return anNabaSurahIds.every(num => completedSet.has(num));
+  };
 
-  // Day distribution for weekly chart (Mon - Sun)
-  const daysOfWeek = ['S', 'S', 'R', 'K', 'J', 'S', 'M']; // Senin, Selasa, Rabu, Kamis, Jumat, Sabtu, Minggu
-  const barHeights = [45, 80, 65, 95, 30, 70, 50]; // Dynamic mock distribution
+  // Categorize santri
+  const santriAdhDhuha = santriList.filter(s => checkAdhDhuha(s.id));
+  const santriAnNaba = santriList.filter(s => checkAnNaba(s.id));
+  const santriMurajaah = santriList.filter(s => !checkAdhDhuha(s.id));
+
+  // Helper component to render Stacked Progress Bar per Class
+  const ClassProgressBar = ({ targetSantriGroup }) => {
+    const totalCount = targetSantriGroup.length;
+    if (totalCount === 0) {
+      return (
+        <div className="mt-2 space-y-1">
+          <div className="w-full h-2 rounded-full bg-slate-200" />
+          <p className="text-[10px] text-slate-400 font-medium">0% (Belum ada santri)</p>
+        </div>
+      );
+    }
+
+    const countsByClass = {};
+    classList.forEach(cls => { countsByClass[cls.id] = 0; });
+    targetSantriGroup.forEach(s => {
+      if (countsByClass[s.classId] !== undefined) {
+        countsByClass[s.classId] += 1;
+      }
+    });
+
+    const segments = classList.map((cls, idx) => {
+      const cnt = countsByClass[cls.id] || 0;
+      const pct = Math.round((cnt / totalCount) * 100);
+      const color = CLASS_PALETTE[idx % CLASS_PALETTE.length];
+      return { cls, cnt, pct, color };
+    }).filter(seg => seg.cnt > 0);
+
+    return (
+      <div className="mt-2 space-y-1.5">
+        <div className="w-full h-2 rounded-full bg-slate-100 flex overflow-hidden shadow-inner">
+          {segments.map(({ cls, pct, color }) => (
+            <div
+              key={cls.id}
+              style={{ width: `${pct}%` }}
+              className={`h-full ${color.bg} transition-all duration-500`}
+              title={`${cls.name}: ${pct}% (${cnt} santri)`}
+            />
+          ))}
+        </div>
+        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[10px] font-semibold text-slate-600">
+          {segments.map(({ cls, cnt, pct, color }) => (
+            <span key={cls.id} className="flex items-center gap-1">
+              <span className={`w-1.5 h-1.5 rounded-full ${color.dot}`} />
+              <span>{cls.name}: {cnt} ({pct}%)</span>
+            </span>
+          ))}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -66,7 +129,7 @@ export default function DashboardOverview({
         </p>
       </div>
 
-      {/* Top 4 Stat Cards (Donezo Style) */}
+      {/* Top 4 Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
         {/* Card 1: Total Santri (Dark Green Hero Card) */}
         <div className="bg-brand-dark text-white p-5 rounded-3xl shadow-lg shadow-brand-dark/15 relative overflow-hidden flex flex-col justify-between min-h-[145px]">
@@ -86,16 +149,15 @@ export default function DashboardOverview({
               <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">
                 {classList.length} Kelas
               </span>
-              <span>Tersebar di halaqah</span>
             </div>
           </div>
         </div>
 
-        {/* Card 2: Setoran Minggu Ini */}
+        {/* Card 2: An-Naas - Adh-Dhuha */}
         <div className="bg-white text-slate-800 p-5 rounded-3xl border border-slate-200/70 shadow-card flex flex-col justify-between min-h-[145px]">
           <div className="flex items-start justify-between">
-            <span className="text-xs font-semibold text-slate-500">
-              Setoran Minggu Ini
+            <span className="text-xs font-bold text-slate-700">
+              An-Naas - Adh-Dhuha
             </span>
             <div className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200/70 flex items-center justify-center text-slate-600 transition-colors cursor-pointer">
               <ArrowUpRight size={16} />
@@ -103,20 +165,17 @@ export default function DashboardOverview({
           </div>
           <div>
             <div className="text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight">
-              {setoranThisWeek.length}
+              {santriAdhDhuha.length}
             </div>
-            <div className="flex items-center gap-1 text-[11px] text-emerald-600 mt-1.5 font-semibold">
-              <TrendingUp size={13} />
-              <span>{regularSetoranList.length} setoran harian</span>
-            </div>
+            <ClassProgressBar targetSantriGroup={santriAdhDhuha} />
           </div>
         </div>
 
-        {/* Card 3: Predikat A (Mumtaz) */}
+        {/* Card 3: An-Naas - An-Naba' */}
         <div className="bg-white text-slate-800 p-5 rounded-3xl border border-slate-200/70 shadow-card flex flex-col justify-between min-h-[145px]">
           <div className="flex items-start justify-between">
-            <span className="text-xs font-semibold text-slate-500">
-              Predikat A (Mumtaz)
+            <span className="text-xs font-bold text-slate-700">
+              An-Naas - An-Naba'
             </span>
             <div className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200/70 flex items-center justify-center text-slate-600 transition-colors cursor-pointer">
               <ArrowUpRight size={16} />
@@ -124,18 +183,16 @@ export default function DashboardOverview({
           </div>
           <div>
             <div className="text-3xl lg:text-4xl font-extrabold text-emerald-700 tracking-tight">
-              {gradeACount}
+              {santriAnNaba.length}
             </div>
-            <div className="flex items-center gap-1 text-[11px] text-slate-500 mt-1.5 font-medium">
-              <span>Sangat lancar & fasih</span>
-            </div>
+            <ClassProgressBar targetSantriGroup={santriAnNaba} />
           </div>
         </div>
 
-        {/* Card 4: Perlu Muraja'ah (Predikat C) */}
+        {/* Card 4: Perlu Muraja'ah */}
         <div className="bg-white text-slate-800 p-5 rounded-3xl border border-slate-200/70 shadow-card flex flex-col justify-between min-h-[145px]">
           <div className="flex items-start justify-between">
-            <span className="text-xs font-semibold text-slate-500">
+            <span className="text-xs font-bold text-slate-700">
               Perlu Muraja'ah
             </span>
             <div className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200/70 flex items-center justify-center text-slate-600 transition-colors cursor-pointer">
@@ -144,11 +201,9 @@ export default function DashboardOverview({
           </div>
           <div>
             <div className="text-3xl lg:text-4xl font-extrabold text-amber-600 tracking-tight">
-              {gradeCCount}
+              {santriMurajaah.length}
             </div>
-            <div className="flex items-center gap-1 text-[11px] text-slate-500 mt-1.5 font-medium">
-              <span>Evaluasi & pengulangan</span>
-            </div>
+            <ClassProgressBar targetSantriGroup={santriMurajaah} />
           </div>
         </div>
       </div>

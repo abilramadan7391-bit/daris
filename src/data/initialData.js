@@ -16,7 +16,7 @@ export const DEFAULT_JUZ_AMMA_SURAHS = [
   { id: 91, number: 91, nameLatin: "Asy-Syams", nameArabic: "الشمس", totalAyat: 15, juz: 30 },
   { id: 92, number: 92, nameLatin: "Al-Lail", nameArabic: "الليل", totalAyat: 21, juz: 30 },
   { id: 93, number: 93, nameLatin: "Adh-Dhuha", nameArabic: "الضحى", totalAyat: 11, juz: 30 },
-  { id: 94, number: 94, nameLatin: "Asy-Syarh", nameArabic: "الشرح", totalAyat: 8, juz: 30 },
+  { id: 94, number: 94, nameLatin: "Al-Insyirah", nameArabic: "الشرح", totalAyat: 8, juz: 30 },
   { id: 95, number: 95, nameLatin: "At-Tin", nameArabic: "التين", totalAyat: 8, juz: 30 },
   { id: 96, number: 96, nameLatin: "Al-'Alaq", nameArabic: "العلق", totalAyat: 19, juz: 30 },
   { id: 97, number: 97, nameLatin: "Al-Qadr", nameArabic: "القدر", totalAyat: 5, juz: 30 },
