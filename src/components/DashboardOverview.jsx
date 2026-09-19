@@ -40,6 +40,10 @@ export default function DashboardOverview({
   const totalSetoran = regularSetoranList.length || 1;
   const mutqinPercentage = Math.round((gradeACount / totalSetoran) * 100);
 
+  // Day distribution for weekly chart (Mon - Sun)
+  const daysOfWeek = ['S', 'S', 'R', 'K', 'J', 'S', 'M']; // Senin, Selasa, Rabu, Kamis, Jumat, Sabtu, Minggu
+  const barHeights = [45, 80, 65, 95, 30, 70, 50]; // Dynamic distribution
+
   // Palette of colors assigned to classes
   const CLASS_PALETTE = [
     { bg: 'bg-emerald-500', dot: 'bg-emerald-500', text: 'text-emerald-700' },
