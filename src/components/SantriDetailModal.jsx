@@ -29,7 +29,8 @@ export default function SantriDetailModal({
   onOpenBulkSetoranForSantri,
   onEditSetoran,
   onDeleteSetoran,
-  onUpdateSantri
+  onUpdateSantri,
+  onDeleteSantri
 }) {
   const fileInputRef = useRef(null);
   const [isCompressing, setIsCompressing] = useState(false);
