@@ -11,11 +11,13 @@ import {
   Pencil,
   Trash2
 } from 'lucide-react';
+import { DEFAULT_JUZ_AMMA_SURAHS } from '../data/initialData';
 
 export default function DashboardOverview({
   santriList = [],
   setoranList = [],
   classList = [],
+  surahsList = [],
   currentUser,
   onOpenSetoranModal,
   onSelectSantri,
@@ -54,28 +56,49 @@ export default function DashboardOverview({
     { bg: 'bg-purple-500', dot: 'bg-purple-500', text: 'text-purple-700' },
   ];
 
-  // Helper to check completed surahs for a santri (predikat A or B)
-  const getSantriCompletedSurahIds = (santriId) => {
-    const sList = setoranList.filter(s => s.santriId === santriId && (s.predikat === 'A' || s.predikat === 'B'));
-    const set = new Set();
-    sList.forEach(s => {
-      if (s.surahId) set.add(Number(s.surahId));
+  const effectiveSurahsList = surahsList.length > 0 ? surahsList : DEFAULT_JUZ_AMMA_SURAHS;
+  const cleanStr = (str) => (str || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+  const getSantriPassedSetoran = (santriId) => {
+    return setoranList.filter(s => String(s.santriId) === String(santriId) && (s.predikat === 'A' || s.predikat === 'B'));
+  };
+
+  const isSurahCompletedBySantri = (santriPassedSetoran, surah) => {
+    const surahNum = Number(surah.number);
+    const surahIdStr = String(surah.id);
+    const surahNameClean = cleanStr(surah.nameLatin || surah.name_latin || '');
+
+    return santriPassedSetoran.some(s => {
+      const sSurahIdStr = String(s.surahId);
+      const sSurahNum = Number(s.surahId);
+      const sSurahNameClean = cleanStr(s.surahName);
+
+      return (
+        sSurahIdStr === surahIdStr ||
+        sSurahNum === surahNum ||
+        (surahNameClean && sSurahNameClean && (
+          sSurahNameClean === surahNameClean ||
+          sSurahNameClean.includes(surahNameClean) ||
+          surahNameClean.includes(sSurahNameClean)
+        ))
+      );
     });
-    return set;
   };
 
   // Range 1: An-Nas (114) down to Adh-Dhuha (93) - 22 Surahs
-  const adhDhuhaSurahIds = Array.from({ length: 22 }, (_, i) => 93 + i);
+  const adhDhuhaSurahs = effectiveSurahsList.filter(s => Number(s.number) >= 93 && Number(s.number) <= 114);
   const checkAdhDhuha = (santriId) => {
-    const completedSet = getSantriCompletedSurahIds(santriId);
-    return adhDhuhaSurahIds.every(num => completedSet.has(num));
+    const passedSetoran = getSantriPassedSetoran(santriId);
+    if (adhDhuhaSurahs.length === 0) return false;
+    return adhDhuhaSurahs.every(surah => isSurahCompletedBySantri(passedSetoran, surah));
   };
 
   // Range 2: An-Nas (114) down to An-Naba' (78) - 37 Surahs (Juz 30 Complete)
-  const anNabaSurahIds = Array.from({ length: 37 }, (_, i) => 78 + i);
+  const anNabaSurahs = effectiveSurahsList.filter(s => Number(s.number) >= 78 && Number(s.number) <= 114);
   const checkAnNaba = (santriId) => {
-    const completedSet = getSantriCompletedSurahIds(santriId);
-    return anNabaSurahIds.every(num => completedSet.has(num));
+    const passedSetoran = getSantriPassedSetoran(santriId);
+    if (anNabaSurahs.length === 0) return false;
+    return anNabaSurahs.every(surah => isSurahCompletedBySantri(passedSetoran, surah));
   };
 
   // Categorize santri

@@ -232,6 +232,7 @@ export default function App() {
               santriList={santriList}
               setoranList={setoranList}
               classList={classList}
+              surahsList={surahsList}
               currentUser={currentUser}
               onOpenSetoranModal={() => handleOpenSetoran(null)}
               onSelectSantri={(santri) => handleSelectSantri(santri)}
